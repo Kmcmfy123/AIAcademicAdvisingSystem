@@ -1,0 +1,25 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/config.php';
+
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/functions.php';
+
+if (file_exists(__DIR__ . '/../models/Student.php')) {
+    require_once __DIR__ . '/../models/Student.php';
+}
+if (file_exists(__DIR__ . '/../models/Course.php')) {
+    require_once __DIR__ . '/../models/Course.php';
+}
+if (file_exists(__DIR__ . '/../models/AdvisingSession.php')) {
+    require_once __DIR__ . '/../models/AdvisingSession.php';
+}
+
+$db = Database::getInstance();
+
+$auth = new Auth();
