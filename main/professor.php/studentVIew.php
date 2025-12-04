@@ -1,1 +1,1 @@
-// view here
+<!-- Professor can view sections with list of students -->
