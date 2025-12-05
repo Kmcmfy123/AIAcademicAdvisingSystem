@@ -13,40 +13,36 @@ $student = $db->fetchOne(
     [$userId]
 );
 
-// If no profile found, set defaults to avoid warnings
 if (!$student) {
     $student = [
         'first_name' => 'Student',
-        'gpa' => null,
+        'gpa' => 0.00,
         'credits_completed' => 0,
     ];
-} else {
-    // Make sure keys exist even if null
-    if (!isset($student['first_name'])) {
-        $student['first_name'] = 'Student';
-    }
-    if (!isset($student['gpa'])) {
-        $student['gpa'] = null;
-    }
-    if (!isset($student['credits_completed'])) {
-        $student['credits_completed'] = 0;
-    }
 }
+
+// Get upcoming advising sessions
+$upcomingSessions = $db->fetchAll(
+    "SELECT ads.*, u.first_name, u.last_name, pp.department 
+     FROM advising_sessions ads 
+     JOIN users u ON ads.professor_id = u.id 
+     LEFT JOIN professor_profiles pp ON u.id = pp.user_id 
+     WHERE ads.student_id = ? AND ads.status = 'scheduled' 
+     AND ads.session_date >= NOW()
+     ORDER BY ads.session_date ASC 
+     LIMIT 3",
+    [$userId]
+) ?: [];
 
 // Get current enrollments
 $currentEnrollments = $db->fetchAll(
-    "SELECT c.*, ce.semester, ce.status 
+    "SELECT c.*, ce.semester, ce.status, ce.grade
      FROM course_enrollments ce 
      JOIN courses c ON ce.course_id = c.id 
      WHERE ce.student_id = ? AND ce.status = 'enrolled' 
      ORDER BY ce.semester DESC",
     [$userId]
-);
-
-// If fetchAll returns false, convert to empty array
-if (!$currentEnrollments) {
-    $currentEnrollments = [];
-}
+) ?: [];
 
 // Get completed courses count
 $completedCountResult = $db->fetchOne(
@@ -61,34 +57,29 @@ $recentSessions = $db->fetchAll(
     "SELECT ads.*, u.first_name, u.last_name 
      FROM advising_sessions ads 
      JOIN users u ON ads.professor_id = u.id 
-     WHERE ads.student_id = ? 
-     ORDER BY ads.session_date DESC LIMIT 5",
+     WHERE ads.student_id = ? AND ads.status = 'completed'
+     ORDER BY ads.session_date DESC LIMIT 3",
     [$userId]
-);
-
-if (!$recentSessions) {
-    $recentSessions = [];
-}
-
-
+) ?: [];
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Student Dashboard - <?= htmlspecialchars(APP_NAME) ?></title>
-    <link rel="stylesheet" href="<?= htmlspecialchars(ASSETS_URL) ?>/css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Dashboard - <?= APP_NAME ?></title>
+    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
 </head>
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="#" class="navbar-brand"><?= htmlspecialchars(APP_NAME) ?></a>
+            <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="profile.php" class="nav-link">Profile</a></li>
-                <li><a href="advising_history.php" class="nav-link">Advising History</a></li>
+                <li><a href="academicProfile.php" class="nav-link">Academic Profile</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="accountProfile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>
@@ -99,13 +90,23 @@ if (!$recentSessions) {
             Welcome, <?= htmlspecialchars($student['first_name']) ?>!
         </h1>
 
+        <!-- Academic Standing Alert -->
+        <?php if (isset($student['academic_standing']) && $student['academic_standing'] !== 'good'): ?>
+            <div class="alert alert-<?= $student['academic_standing'] === 'probation' ? 'danger' : 'warning' ?>">
+                <strong>Academic Standing:</strong> 
+                You are currently on <?= ucfirst($student['academic_standing']) ?>. 
+                Please schedule an advising session for guidance.
+            </div>
+        <?php endif; ?>
+
+        <!-- Statistics -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value"><?= formatGPA($student['gpa']) ?></div>
+                <div class="stat-value"><?= number_format($student['gpa'] ?? 0, 2) ?></div>
                 <div class="stat-label">Current GPA</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?= (int)$student['credits_completed'] ?></div>
+                <div class="stat-value"><?= (int)($student['credits_completed'] ?? 0) ?></div>
                 <div class="stat-label">Credits Completed</div>
             </div>
             <div class="stat-card">
@@ -114,103 +115,127 @@ if (!$recentSessions) {
             </div>
             <div class="stat-card">
                 <div class="stat-value"><?= count($currentEnrollments) ?></div>
-                <div class="stat-label">Current Enrollments</div>
+                <div class="stat-label">Current Courses</div>
             </div>
         </div>
 
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+            <!-- Upcoming Advising Sessions -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Upcoming Advising Sessions</h2>
+                </div>
+                
+                <?php if (empty($upcomingSessions)): ?>
+                    <p>No upcoming sessions scheduled.</p>
+                    <a href="advising_sessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                        Schedule Session
+                    </a>
+                <?php else: ?>
+                    <?php foreach ($upcomingSessions as $session): ?>
+                        <div style="border-left: 3px solid var(--warning-color); padding-left: 1rem; margin-bottom: 1rem;">
+                            <strong>Advisor:</strong> Prof. <?= htmlspecialchars($session['first_name'] . ' ' . $session['last_name']) ?><br>
+                            <strong>Department:</strong> <?= htmlspecialchars($session['department'] ?? 'N/A') ?><br>
+                            <strong>Date:</strong> <?= date('M d, Y \a\t g:i A', strtotime($session['session_date'])) ?><br>
+                            <?php if ($session['notes']): ?>
+                                <small><em><?= htmlspecialchars(substr($session['notes'], 0, 60)) ?>...</em></small>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                    <a href="advising_sessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                        View All Sessions
+                    </a>
+                <?php endif; ?>
+            </div>
+
+            <!-- Current Courses -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Current Enrollments</h2>
+                </div>
+                
+                <?php if (empty($currentEnrollments)): ?>
+                    <p>No current enrollments.</p>
+                <?php else: ?>
+                    <?php foreach ($currentEnrollments as $course): ?>
+                        <div style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
+                            <strong><?= htmlspecialchars($course['course_code']) ?></strong> - 
+                            <?= htmlspecialchars($course['course_name']) ?><br>
+                            <small>
+                                <?= $course['credits'] ?> credits | 
+                                <?= htmlspecialchars($course['semester']) ?>
+                            </small>
+                        </div>
+                    <?php endforeach; ?>
+                    <a href="academic_profile.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                        View Full Academic Profile
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Recommendations</h2>
+                <h2 class="card-title">Course Recommendations</h2>
             </div>
             <div id="recommendations">
-                <p>Loading recommendations...</p>
+                <p>Loading AI-powered recommendations...</p>
             </div>
-            <a href="../recommend.php" class="btn btn-primary">Get Full Recommendations</a>
         </div>
 
-        <!-- Current Enrollments -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Current Enrollments</h2>
-            </div>
-            <?php if (empty($currentEnrollments)): ?>
-                <p>No current enrollments.</p>
-            <?php else: ?>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Course Code</th>
-                            <th>Course Name</th>
-                            <th>Credits</th>
-                            <th>Semester</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($currentEnrollments as $enrollment): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($enrollment['course_code']) ?></td>
-                                <td><?= htmlspecialchars($enrollment['course_name']) ?></td>
-                                <td><?= (int)$enrollment['credits'] ?></td>
-                                <td><?= htmlspecialchars($enrollment['semester']) ?></td>
-                                <td><span class="badge badge-primary"><?= htmlspecialchars(ucfirst($enrollment['status'])) ?></span></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-
-        <!-- Recent Adv -->
+        <!-- Recent Advising History -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Recent Advising Sessions</h2>
             </div>
+            
             <?php if (empty($recentSessions)): ?>
-                <p>No advising sessions yet.</p>
+                <p>No completed advising sessions yet.</p>
             <?php else: ?>
                 <?php foreach ($recentSessions as $session): ?>
-                    <div style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
-                        <strong>Advisor:</strong> <?= htmlspecialchars($session['first_name'] . ' ' . $session['last_name']) ?><br>
-                        <strong>Date:</strong> <?= htmlspecialchars(date('M d, Y', strtotime($session['session_date']))) ?><br>
-                        <strong>Notes:</strong> <?= htmlspecialchars($session['notes']) ?>
+                    <div style="border-left: 3px solid var(--success-color); padding-left: 1rem; margin-bottom: 1rem;">
+                        <strong>Advisor:</strong> Prof. <?= htmlspecialchars($session['first_name'] . ' ' . $session['last_name']) ?><br>
+                        <strong>Date:</strong> <?= date('M d, Y', strtotime($session['session_date'])) ?><br>
+                        <?php if ($session['recommendations']): ?>
+                            <small><strong>Recommendations:</strong> <?= htmlspecialchars(substr($session['recommendations'], 0, 100)) ?>...</small>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
+                <a href="advising_history.php" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                    View Full History
+                </a>
             <?php endif; ?>
         </div>
     </div>
     
     <script>
-        // Load recommendations via AJAX
+        // Load AI recommendations
         fetch('../recommend.php?format=json')
             .then(response => response.json())
             .then(data => {
                 const container = document.getElementById('recommendations');
                 if (data.length === 0) {
-                    container.innerHTML = '<p>No recommendations available at this time.</p>';
+                    container.innerHTML = '<p>No recommendations available. Complete more courses to get personalized suggestions.</p>';
                 } else {
                     let html = '';
                     data.slice(0, 3).forEach(rec => {
                         html += `
-                            <div class="recommendation-card card" style="margin-bottom: 1rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: start;">
-                                    <div>
-                                        <h3 style="margin-bottom: 0.5rem;">${rec.course.course_code} - ${rec.course.course_name}</h3>
-                                        <p style="color: #666;">${rec.course.description}</p>
-                                        <p style="font-size: 0.9rem;"><strong>Reason:</strong> ${rec.reason}</p>
-                                    </div>
-                                    <div class="recommendation-score">
-                                        Score: ${rec.score}
-                                    </div>
+                            <div style="border-left: 3px solid var(--success-color); padding-left: 1rem; margin-bottom: 1rem;">
+                                <h3 style="margin-bottom: 0.3rem;">${rec.course.course_code} - ${rec.course.course_name}</h3>
+                                <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem;">${rec.course.description}</p>
+                                <div style="background: #d1fae5; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; margin-top: 0.5rem;">
+                                    <strong>💡 Why recommended:</strong> ${rec.reason}
                                 </div>
                             </div>
                         `;
                     });
                     container.innerHTML = html;
+                    container.innerHTML += '<a href="../recommend.php" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;">View All Recommendations</a>';
                 }
             })
-            .catch(error => {
-                document.getElementById('recommendations').innerHTML = '<p>Error loading recommendations.</p>';
+            .catch(() => {
+                document.getElementById('recommendations').innerHTML = '<p>Unable to load recommendations at this time.</p>';
             });
     </script>
 </body>

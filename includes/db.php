@@ -2,7 +2,7 @@
 class Database {
     private static $instance = null;
     private $pdo;
-    
+
     private function __construct() {
         try {
             $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
@@ -13,52 +13,56 @@ class Database {
             ];
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
-            // detailed error for admins/developers, not users.
             error_log('Database connection error: ' . $e->getMessage());
             throw new RuntimeException('Database connection failed.');
         }
     }
-    
+
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
+
     public function getConnection() {
         return $this->pdo;
     }
-    
-    public function query($sql, $params = []) {
+
+    // Run a query and return the PDOStatement
+    public function query(string $sql, array $params = []): PDOStatement {
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
             return $stmt;
         } catch (PDOException $e) {
-            error_log("Query error: " . $e->getMessage());
+            error_log("Query error: " . $e->getMessage() . "\nSQL: $sql");
             throw $e;
         }
     }
-    
-    public function fetchAll($sql, $params = []) {
+
+    // Fetch multiple rows
+    public function fetchAll(string $sql, array $params = []): array {
         return $this->query($sql, $params)->fetchAll();
     }
-    
-    public function fetchOne($sql, $params = []) {
-        return $this->query($sql, $params)->fetch();
+
+    // Fetch a single row
+    public function fetchOne(string $sql, array $params = []): ?array {
+        $result = $this->query($sql, $params)->fetch();
+        return $result ?: null;
     }
-    
-    public function insert($sql, $params = []) {
+
+    // Insert and return last inserted ID
+    public function insert(string $sql, array $params = []): int {
         $this->query($sql, $params);
-        return $this->pdo->lastInsertId();
+        return (int)$this->pdo->lastInsertId();
     }
-    
-    public function update($sql, $params = []) {
-        return $this->query($sql, $params)->rowCount();
-    }
-    
-    public function delete($sql, $params = []) {
+
+    // Update or delete, return affected rows
+    public function execute(string $sql, array $params = []): int {
         return $this->query($sql, $params)->rowCount();
     }
 }
+
+// Shortcut for convenience
+$db = Database::getInstance();
