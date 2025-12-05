@@ -5,7 +5,7 @@ if ($auth->isLoggedIn()) {
     $role = $_SESSION['role'];
     switch ($role) {
         case 'student':
-            redirect(APP_URL . '/student/dashboard.php');
+            redirect(APP_URL . '/main/student/dashboard.php');
             break;
         case 'professor':
             redirect(APP_URL . '/main/professor/dashboard.php');
