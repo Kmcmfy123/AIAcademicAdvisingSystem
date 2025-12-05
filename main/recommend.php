@@ -19,6 +19,35 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course Recommendations - <?= APP_NAME ?></title>
     <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+
+    <style>
+        .search-panel {
+            width: 350px;
+            float: right;
+            margin: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        /* Hide the "Enhanced by Google" branding */
+        .gsc-branding {
+            opacity: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        .recommendation-card {
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: #fff;
+        }
+        .risk-low { color: #dc2626; font-weight: bold; }
+        .risk-at_risk { color: #d97706; font-weight: bold; }
+        .risk-good { color: #16a34a; font-weight: bold; }
+    </style>
+
 </head>
 <body>
     <nav class="navbar">
@@ -32,6 +61,11 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     </nav>
     
     <div class="container">
+        <div class="search-panel">
+            <h3 style="margin-bottom: 1rem; color:#1e293b;">Search Anything</h3>
+            <div class="gcse-search"></div>
+        </div>
+
         <h1 style="margin: 2rem 0;">Course Recommendations</h1>
         
         <?php if (empty($recommendations)): ?>
