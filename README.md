@@ -101,6 +101,29 @@ CREATE TABLE predictive_analytics (
 CREATE DATABASE IF NOT EXISTS advising_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE advising_system;
 
+CREATE TABLE course_grades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    grade VARCHAR(5),
+    semester VARCHAR(50),
+    school_year VARCHAR(20),
+    remarks VARCHAR(50),
+
+    FOREIGN KEY (student_id) REFERENCES users(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+);
+
+
+CREATE TABLE learning_resources (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_code VARCHAR(20) NOT NULL,
+    risk_level ENUM('low', 'at_risk', 'good') NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    url VARCHAR(500) NOT NULL,
+    INDEX idx_course_risk (course_code, risk_level)
+) ENGINE=InnoDB;
 -- Users table (handles all user types)
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -172,7 +195,7 @@ CREATE TABLE course_enrollments (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
     INDEX idx_student_semester (student_id, semester)
 ) ENGINE=InnoDB;
-
+select * from course_enrollments;
 -- Advising sessions
 CREATE TABLE advising_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -221,3 +244,4 @@ CREATE TABLE activity_logs (
 
 -- Update local from github repo
 -- Git pull
+
