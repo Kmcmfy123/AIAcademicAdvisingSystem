@@ -175,14 +175,7 @@ $recentSessions = $db->fetchAll(
         </div>
 
         <!-- AI Recommendations -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Course Recommendations</h2>
-            </div>
-            <div id="recommendations">
-                <p>Loading AI-powered recommendations...</p>
-            </div>
-        </div>
+        
 
         <!-- Recent Advising History -->
         <div class="card">

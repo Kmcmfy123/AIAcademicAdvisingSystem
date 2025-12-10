@@ -7,6 +7,34 @@ Recommendation from AI/ from Professor like:
 
 <?php
 require_once __DIR__ . '/../../includes/init.php';
+
+$userId = $_SESSION['user_id']; // or whatever key you use
+
+
+if(isset($_GET['pageSched']))
+{
+    $pageSched = $_GET['pageSched'];
+} else 
+{
+    $pageSched = 1;
+}
+
+$numPage = 04;
+$defaultPage = ($pageSched-1)*04;
+echo $defaultPage;
+
+
+$result = $db->fetchAll(
+    "SELECT * FROM advising_sessions 
+     WHERE student_id = ?
+     ORDER BY session_date DESC
+     LIMIT ?, ?",
+    [$userId, $defaultPage, $numPage]
+);
+
+
+
+
 $auth->requireRole('student');
 
 $userId = $_SESSION['user_id'];
@@ -58,16 +86,36 @@ $professors = $db->fetchAll(
      WHERE u.role = 'professor'"
 );
 
-// Get student's advising sessions
+$filter = $_GET['filter'] ?? 'ongoing';
+
+// Fetch student's advising sessions
 $sessions = $db->fetchAll(
-    "SELECT ads.*, u.first_name, u.last_name, u.email, pp.department 
-     FROM advising_sessions ads 
-     JOIN users u ON ads.professor_id = u.id 
-     LEFT JOIN professor_profiles pp ON u.id = pp.user_id 
-     WHERE ads.student_id = ? 
-     ORDER BY ads.session_date ASC",
+    "SELECT ads.*, u.first_name, u.last_name, pp.department 
+     FROM advising_sessions ads
+     JOIN users u ON ads.professor_id = u.id
+     LEFT JOIN professor_profiles pp ON u.id = pp.user_id
+     WHERE ads.student_id = ?
+     ORDER BY ads.session_date DESC",
     [$userId]
 );
+
+// Filter sessions based on $filter
+$now = date('Y-m-d H:i:s');
+$filteredSessions = array_filter($sessions, function($s) use ($filter, $now) {
+    switch ($filter) {
+        case 'ongoing': // ongoing = today and scheduled
+            return $s['status'] === 'scheduled' && date('Y-m-d', strtotime($s['session_date'])) === date('Y-m-d');
+        case 'upcoming':
+            return $s['status'] === 'scheduled' && $s['session_date'] > $now;
+        case 'previous':
+            return $s['status'] === 'completed';
+        case 'cancelled':
+            return $s['status'] === 'cancelled';
+        default:
+            return true;
+    }
+});
+
 
 ?>
 <!DOCTYPE html>
@@ -77,6 +125,7 @@ $sessions = $db->fetchAll(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Advising Sessions - <?= APP_NAME ?></title>
     <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         .session-card {
             border-left: 4px solid var(--primary-color);
@@ -158,15 +207,50 @@ $sessions = $db->fetchAll(
             </form>
         </div>
 
-         <!-- Pleae change this. It needs to display Upcoming, Completed/Previous, Cancelled  -->
+         <!-- Pleae change this. It needs to display Ongoing, Upcoming, Previous, Cancelled  -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">My Advising Sessions</h2>
             </div>
             
+            <?php
+            $filter = $_GET['filter'] ?? 'ongoing';
+            ?>
+
+            <div class="btn-group" style="margin: 10px 0;">
+                <a href="?filter=ongoing" class="btn btn-outline-primary <?= $filter=='ongoing' ? 'active' : '' ?>">Ongoing</a>
+                <!-- Need to fix the problem as it shows both the called session, where those should be in cancelled page only -->
+                <a href="?filter=upcoming" class="btn btn-outline-primary <?= $filter=='upcoming' ? 'active' : '' ?>">Upcoming</a>
+                <a href="?filter=previous" class="btn btn-outline-primary <?= $filter=='previous' ? 'active' : '' ?>">Previous</a>
+                <a href="?filter=cancelled" class="btn btn-outline-primary <?= $filter=='cancelled' ? 'active' : '' ?>">Cancelled</a>
+            </div>
+
+
             <?php if (empty($sessions)): ?>
                 <p>No advising sessions yet. Book your first session above!</p>
-            <?php else: ?>
+            <?php 
+
+            else: 
+                $sessions = $db->fetchAll(
+                    "SELECT ads.*, u.first_name, u.last_name, pp.department
+                    FROM advising_sessions ads
+                    JOIN users u ON ads.professor_id = u.id
+                    LEFT JOIN professor_profiles pp ON u.id = pp.user_id
+                    WHERE ads.student_id = ?
+                    ORDER BY ads.session_date ASC",
+                    [$userId]
+                );
+
+                $total = $db->fetchAll(
+                    "SELECT COUNT(*) AS total 
+                    FROM advising_sessions 
+                    WHERE student_id = ?",
+                    [$userId]
+                );
+
+                $total_record = $total ? ($total[0]['total'] ?? 0) : 0;
+                echo $total_record;
+            ?>
                 <?php foreach ($sessions as $session): ?>
                     <div class="session-card <?= strtolower($session['status']) ?>">
                         <div style="display: flex; justify-content: space-between; align-items: start;">

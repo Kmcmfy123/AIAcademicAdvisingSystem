@@ -267,6 +267,7 @@ body {
     border-left: 4px solid var(--success-color);
     margin-bottom: 1rem;
     transition: transform 0.3s;
+    align: left;
 }
 
 .recommendation-card:hover {
@@ -298,6 +299,11 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+/*To add: Let the card of sample course be aligned at left */
+
+
 
 /* Print Styles */
 @media print {

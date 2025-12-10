@@ -174,6 +174,16 @@ function safe($value, $fallback = 'N/A') {
         <?php endif; ?>
     </div>
 
+    <!-- This loads overview of Courses -->
+    <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Course Recommendations</h2>
+            </div>
+            <div id="recommendations">
+                <a class="btn btn-primary" href="../recommend.php">View Courses</a>
+            </div>
+    </div>
+
     <!-- ADVISING HISTORY -->
     <div class="card">
         <div class="card-header"><h2 class="card-title">Advising Session History</h2></div>

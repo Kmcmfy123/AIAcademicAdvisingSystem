@@ -23,7 +23,8 @@ $recommendations = getRecommendedCourses($userId);
 // exit;  // Stops page loading so you can see debug info
 
 // If you want to skip debug, comment out above and uncomment below for testing UI with sample data
-/*
+
+
 if (empty($recommendations)) {
     $recommendations = [
         [
@@ -54,7 +55,7 @@ if (empty($recommendations)) {
         ],
     ];
 }
-*/
+
 
 if (isset($_GET['format']) && $_GET['format'] === 'json') {
     header('Content-Type: application/json');
@@ -126,9 +127,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
             <div class="alert alert-info">
                 No course recommendations available at this time. Please check back later or contact your advisor.
             </div>
-             <div class="search-panel">
-            <script async src="https://cse.google.com/cse.js?cx=10afcca3eb694482b"></script>
-            <div class="gcse-search"></div>
+
         </div>
         <?php else: ?>
             <?php foreach ($recommendations as $rec): ?>
@@ -136,7 +135,7 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
                     <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
                         <div class="recommendation-details" style="flex:1;">
                             <h2 class="card-title" style="margin-bottom: 0.3rem;">
-                                <?= htmlspecialchars($rec['course']['course_code']) ?> – 
+                                <?= htmlspecialchars($rec['course']['course_code']) ?>
                                 <?= htmlspecialchars($rec['course']['course_name']) ?>
                             </h2>
 
@@ -168,7 +167,15 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
                         </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
+
+                <?php endforeach; ?>
+
+                <!-- Link for search engine: https://programmablesearchengine.google.com/controlpanel/all -->
+                <div class="search-panel">
+                    <script async src="https://cse.google.com/cse.js?cx=10afcca3eb694482b"></script>
+                <div class="gcse-search"></div>
+
+                
         <?php endif; ?>
     </div>
 </body>
