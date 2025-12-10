@@ -1,3 +1,10 @@
+<!-- 
+Recommendation from AI/ from Professor like: 
+-Based on curriculum map
+-Remarks
+-Insights
+-Recent Advising Sessions -->
+
 <?php
 require_once __DIR__ . '/../../includes/init.php';
 $auth->requireRole('student');
@@ -58,7 +65,7 @@ $sessions = $db->fetchAll(
      JOIN users u ON ads.professor_id = u.id 
      LEFT JOIN professor_profiles pp ON u.id = pp.user_id 
      WHERE ads.student_id = ? 
-     ORDER BY ads.session_date DESC",
+     ORDER BY ads.session_date ASC",
     [$userId]
 );
 
@@ -95,7 +102,7 @@ $sessions = $db->fetchAll(
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="advising_sessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
                 <li><a href="profile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
@@ -151,7 +158,7 @@ $sessions = $db->fetchAll(
             </form>
         </div>
 
-        <!-- Upcoming Sessions -->
+         <!-- Pleae change this. It needs to display Upcoming, Completed/Previous, Cancelled  -->
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">My Advising Sessions</h2>
@@ -179,10 +186,10 @@ $sessions = $db->fetchAll(
                                         <?= ucfirst($session['status']) ?>
                                     </span>
                                 </p>
-                                <?php if ($session['notes']): ?>
+                                <?php if ($session['notes'] ?? null): ?>
                                     <p><strong>Notes:</strong> <?= htmlspecialchars($session['notes']) ?></p>
                                 <?php endif; ?>
-                                <?php if ($session['feedback']): ?>
+                                <?php if ($session['feedback'] ?? null): ?>
                                     <div style="background: #f0fdf4; padding: 0.75rem; border-radius: 4px; margin-top: 0.5rem;">
                                         <strong>Professor Feedback:</strong><br>
                                         <?= nl2br(htmlspecialchars($session['feedback'])) ?>

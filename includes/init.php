@@ -16,8 +16,8 @@ if (file_exists(__DIR__ . '/../models/Student.php')) {
 if (file_exists(__DIR__ . '/../models/Course.php')) {
     require_once __DIR__ . '/../models/Course.php';
 }
-if (file_exists(__DIR__ . '/../models/AdvisingSession.php')) {
-    require_once __DIR__ . '/../models/AdvisingSession.php';
+if (file_exists(__DIR__ . '/../models/advisingSession.php')) {
+    require_once __DIR__ . '/../models/advisingSession.php';
 }
 
 $db = Database::getInstance();

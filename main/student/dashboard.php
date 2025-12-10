@@ -128,7 +128,7 @@ $recentSessions = $db->fetchAll(
                 
                 <?php if (empty($upcomingSessions)): ?>
                     <p>No upcoming sessions scheduled.</p>
-                    <a href="advising_sessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="advisingSessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                         Schedule Session
                     </a>
                 <?php else: ?>
@@ -142,7 +142,7 @@ $recentSessions = $db->fetchAll(
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
-                    <a href="advising_sessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="advisingSessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                         View All Sessions
                     </a>
                 <?php endif; ?>

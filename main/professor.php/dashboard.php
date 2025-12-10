@@ -79,7 +79,7 @@ $recentSessions = $db->fetchAll(
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="advising_sessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
                 <li><a href="students.php" class="nav-link">Students</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
@@ -131,7 +131,7 @@ $recentSessions = $db->fetchAll(
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
-                    <a href="advising_sessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="advisingSessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                         View All Sessions
                     </a>
                 <?php endif; ?>
@@ -207,7 +207,7 @@ $recentSessions = $db->fetchAll(
                 <h2 class="card-title">Quick Actions</h2>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <a href="advising_sessions.php" class="btn btn-primary">Manage Sessions</a>
+                <a href="advisingSessions.php" class="btn btn-primary">Manage Sessions</a>
                 <a href="students.php" class="btn btn-success">View All Students</a>
                 <a href="reports.php" class="btn btn-secondary">Generate Reports</a>
                 <a href="profile.php" class="btn btn-secondary">Edit Profile</a>

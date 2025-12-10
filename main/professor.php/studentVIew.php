@@ -110,7 +110,7 @@ $riskSummary = $db->fetchOne(
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="advising_sessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
                 <li><a href="students.php" class="nav-link">Students</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>

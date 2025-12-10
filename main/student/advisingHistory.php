@@ -77,7 +77,7 @@ $stats = [
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
                 <li><a href="academicProfile.php" class="nav-link">Academic Profile</a></li>
-                <li><a href="advising_sessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
                 <li><a href="advisingHistory.php" class="nav-link">History</a></li>
                 <li><a href="accountsProfile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
@@ -135,7 +135,7 @@ $stats = [
             
             <?php if (empty($sessions)): ?>
                 <p>No advising sessions in your history yet.</p>
-                <a href="advising_sessions.php" class="btn btn-primary no-print">
+                <a href="advisinSessions.php" class="btn btn-primary no-print">
                     Schedule Your First Session
                 </a>
             <?php else: ?>
