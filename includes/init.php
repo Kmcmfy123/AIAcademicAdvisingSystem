@@ -3,6 +3,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+//PHP Mailer
+require __DIR__ . '/../vendor/autoload.php'; // load Composer autoloader
+require __DIR__ . '/../mailer.php';          // your Mailer class
+
+
 require_once __DIR__ . '/config.php';
 
 require_once __DIR__ . '/db.php';

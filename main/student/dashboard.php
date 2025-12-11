@@ -202,34 +202,6 @@ $recentSessions = $db->fetchAll(
         </div>
     </div>
     
-    <script>
-        // Load AI recommendations
-        fetch('../recommend.php?format=json')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('recommendations');
-                if (data.length === 0) {
-                    container.innerHTML = '<p>No recommendations available. Complete more courses to get personalized suggestions.</p>';
-                } else {
-                    let html = '';
-                    data.slice(0, 3).forEach(rec => {
-                        html += `
-                            <div style="border-left: 3px solid var(--success-color); padding-left: 1rem; margin-bottom: 1rem;">
-                                <h3 style="margin-bottom: 0.3rem;">${rec.course.course_code} - ${rec.course.course_name}</h3>
-                                <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.3rem;">${rec.course.description}</p>
-                                <div style="background: #d1fae5; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; margin-top: 0.5rem;">
-                                    <strong>💡 Why recommended:</strong> ${rec.reason}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
-                    container.innerHTML += '<a href="../recommend.php" class="btn btn-success" style="width: 100%; margin-top: 0.5rem;">View All Recommendations</a>';
-                }
-            })
-            .catch(() => {
-                document.getElementById('recommendations').innerHTML = '<p>Unable to load recommendations at this time.</p>';
-            });
-    </script>
+    
 </body>
 </html>

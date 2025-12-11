@@ -24,14 +24,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Password must be at least 8 characters';
         } else {
             $result = $auth->register($email, $password, $firstName, $lastName, $role);
+            
             if ($result['success']) {
                 $success = $result['message'];
+
+                // Only send email if registration succeeded
+                $userEmail = $email;
+                $userName  = $firstName . ' ' . $lastName;
+
+                $config = require __DIR__ . '/../configMail.php';
+                $mailer = new Mailer($config);
+
+                $mailSent = $mailer->send(
+                    $userEmail,
+                    $userName,
+                    "Welcome to Our System",
+                    "<p>Hi $userName, welcome!</p>",
+                    "Hi $userName, welcome!"
+                );
+
+                if ($mailSent) {
+                    $success .= " Email sent successfully!";
+                } else {
+                    $error = "Failed to send welcome email.";
+                }
+
             } else {
                 $error = $result['message'];
             }
         }
     }
 }
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

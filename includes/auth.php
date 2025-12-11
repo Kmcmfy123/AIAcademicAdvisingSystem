@@ -13,10 +13,28 @@ class Auth {
         }
         
         // Check if email exists
-        $existing = $this->db->fetchOne("SELECT id FROM users WHERE email = ?", [$email]);
+        $existing = $this->db->fetchOne("SELECT id, is_verified FROM users WHERE email = ?", [$email]);
         if ($existing) {
-            return ['success' => false, 'message' => 'Email already registered'];
+            if ($existing['is_verified']) {
+                return ['success' => false, 'message' => 'Email already registered'];
+            } else {
+                // Optionally: update password, resend verification email
+                $userId = $existing['id'];
+                $newToken = bin2hex(random_bytes(32));
+                $this->db->query("UPDATE users SET password_hash = ?, verification_token = ? WHERE id = ?",[
+                    password_hash($password, PASSWORD_DEFAULT),
+                    $newToken,
+                    $userId
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'You already registered but did not verify your email. A new verification email has been sent.',
+                    'user_id' => $userId
+                ];
+            }
         }
+
         
         // Hash password
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
