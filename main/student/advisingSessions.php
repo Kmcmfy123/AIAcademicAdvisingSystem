@@ -21,7 +21,7 @@ if(isset($_GET['pageSched']))
 
 $numPage = 04;
 $defaultPage = ($pageSched-1)*04;
-echo $defaultPage;
+// echo $defaultPage;
 
 
 $result = $db->fetchAll(

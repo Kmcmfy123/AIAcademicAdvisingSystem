@@ -119,7 +119,23 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
 
     <div class="container">
 
-       
+    <!-- Upd: Moved here -->
+    <div class="card">
+        <div class="card-header"><h2 class="card-title">Advising Session History</h2></div>
+
+        <?php if (empty($advisingSessions)): ?>
+            <p>No completed advising sessions yet.</p>
+        <?php else: ?>
+            <?php foreach ($advisingSessions as $session): ?>
+                <div style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
+                    <strong>Date:</strong> <?= date('F d, Y', strtotime($session['session_date'])) ?><br>
+                    <strong>Advisor:</strong> Prof. 
+                    <?= safe($session['first_name'] . ' ' . $session['last_name']) ?> 
+                    (<?= safe($session['department']) ?>)
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>       
 
         <h1 class="card-title" style="margin-bottom: 1.5rem;">Course Recommendations</h1>
 

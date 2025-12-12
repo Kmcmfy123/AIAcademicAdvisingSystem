@@ -104,7 +104,7 @@ function safe($value, $fallback = 'N/A') {
 <div class="container">
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem;">
-        <h1>Academic Profile & Records</h1>
+        <h1>Academic Profile & Student Records</h1>
         <button onclick="window.print()" class="btn btn-primary no-print">Download/Print Records</button>
     </div>
 
@@ -179,7 +179,7 @@ function safe($value, $fallback = 'N/A') {
             <div class="card-header">
                 <h2 class="card-title">Course Recommendations</h2>
             </div>
-            <div id="recommendations">
+            <div id="recommendations" class="recommendation-grid">
                 <a class="btn btn-primary" href="../recommend.php">View Courses</a>
             </div>
     </div>
@@ -215,23 +215,7 @@ function safe($value, $fallback = 'N/A') {
     </script>
 
 
-    <!-- ADVISING HISTORY -->
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">Advising Session History</h2></div>
 
-        <?php if (empty($advisingSessions)): ?>
-            <p>No completed advising sessions yet.</p>
-        <?php else: ?>
-            <?php foreach ($advisingSessions as $session): ?>
-                <div style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
-                    <strong>Date:</strong> <?= date('F d, Y', strtotime($session['session_date'])) ?><br>
-                    <strong>Advisor:</strong> Prof. 
-                    <?= safe($session['first_name'] . ' ' . $session['last_name']) ?> 
-                    (<?= safe($session['department']) ?>)
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
 
 </div>
 </body>
