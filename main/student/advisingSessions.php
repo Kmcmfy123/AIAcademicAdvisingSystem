@@ -152,6 +152,7 @@ $filteredSessions = array_filter($sessions, function($s) use ($filter, $now) {
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
                 <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="advisingHistory.php" class="nav-link">Advising<br>History</a></li>
                 <li><a href="profile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
@@ -210,20 +211,14 @@ $filteredSessions = array_filter($sessions, function($s) use ($filter, $now) {
          <!-- Pleae change this. It needs to display Ongoing, Upcoming, Previous, Cancelled  -->
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">My Advising Sessions</h2>
+                <h2 class="card-title">Recent Advising Sessions</h2>
             </div>
             
             <?php
             $filter = $_GET['filter'] ?? 'ongoing';
             ?>
 
-            <div class="btn-group" style="margin: 10px 0;">
-                <a href="?filter=ongoing" class="btn btn-outline-primary <?= $filter=='ongoing' ? 'active' : '' ?>">Ongoing</a>
-                <!-- Need to fix the problem as it shows both the called session, where those should be in cancelled page only -->
-                <a href="?filter=upcoming" class="btn btn-outline-primary <?= $filter=='upcoming' ? 'active' : '' ?>">Upcoming</a>
-                <a href="?filter=previous" class="btn btn-outline-primary <?= $filter=='previous' ? 'active' : '' ?>">Previous</a>
-                <a href="?filter=cancelled" class="btn btn-outline-primary <?= $filter=='cancelled' ? 'active' : '' ?>">Cancelled</a>
-            </div>
+
 
 
             <?php if (empty($sessions)): ?>
@@ -249,7 +244,7 @@ $filteredSessions = array_filter($sessions, function($s) use ($filter, $now) {
                 );
 
                 $total_record = $total ? ($total[0]['total'] ?? 0) : 0;
-                echo $total_record;
+
             ?>
                 <?php foreach ($sessions as $session): ?>
                     <div class="session-card <?= strtolower($session['status']) ?>">

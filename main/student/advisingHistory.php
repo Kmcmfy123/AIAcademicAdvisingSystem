@@ -78,7 +78,7 @@ $stats = [
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
                 <li><a href="academicProfile.php" class="nav-link">Academic Profile</a></li>
                 <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
-                <li><a href="advisingHistory.php" class="nav-link">History</a></li>
+                <li><a href="advisingHistory.php" class="nav-link">Advising <br>History</a></li>
                 <li><a href="accountsProfile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
@@ -194,7 +194,7 @@ $stats = [
 
                                 <?php if ($session['follow_up_required']): ?>
                                     <div style="background: #fee2e2; padding: 0.75rem; border-left: 3px solid var(--danger-color); border-radius: 4px;">
-                                        <strong>⚠️ Follow-up Required</strong>
+                                        <strong>Follow-up Required</strong>
                                         <p style="margin: 0.3rem 0 0 0; font-size: 0.9rem;">
                                             Please schedule a follow-up session with your advisor.
                                         </p>

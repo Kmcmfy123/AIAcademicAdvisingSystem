@@ -182,6 +182,8 @@ CREATE TABLE courses (
     INDEX idx_department (department)
 ) ENGINE=InnoDB;
 
+
+
 -- Student course history
 CREATE TABLE course_enrollments (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -305,4 +307,10 @@ INSERT INTO advising_sessions (student_id, professor_id, session_date, notes, re
 (4, 2, '2024-01-15 10:00:00', 'Discussed course selection for Spring 2024. Student interested in AI track.', '["CS301", "CS302"]', 'completed'),
 (5, 3, '2024-01-20 14:00:00', 'Final year planning. Recommended capstone project topics.', '["CS401", "CS402"]', 'completed');
 
-
+-- Sample courses
+INSERT INTO courses (course_code, course_name, credits, department, level, prerequisites, description, is_active) VALUES
+('CS105', 'Foundations of Computing', 3, 'Computer Science', 'freshman', '[]', 'Problem solving and computational thinking basics.', TRUE),
+('CS210', 'Algorithms I', 3, 'Computer Science', 'sophomore', '["CS102"]', 'Core algorithm design and analysis.', TRUE),
+('CS260', 'Databases I', 3, 'Computer Science', 'sophomore', '["CS101"]', 'Relational modeling and SQL fundamentals.', TRUE),
+('CS320', 'Web Application Development', 3, 'Computer Science', 'junior', '["CS201", "CS260"]', 'Building full-stack web apps with modern frameworks.', TRUE),
+('CS410', 'Machine Learning Fundamentals', 3, 'Computer Science', 'senior', '["CS210", "CS260"]', 'Supervised and unsupervised learning techniques.', TRUE);

@@ -77,8 +77,9 @@ $recentSessions = $db->fetchAll(
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
                 <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="academicProfile.php" class="nav-link">Academic Profile</a></li>
-                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="academicProfile.php" class="nav-link">Academic<br>Profile</a></li>
+                <li><a href="advisingSessions.php" class="nav-link">Advising<br>Sessions</a></li>
+
                 <li><a href="accountProfile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
@@ -167,7 +168,7 @@ $recentSessions = $db->fetchAll(
                             </small>
                         </div>
                     <?php endforeach; ?>
-                    <a href="academic_profile.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="academicProfile.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                         View Full Academic Profile
                     </a>
                 <?php endif; ?>
@@ -195,7 +196,7 @@ $recentSessions = $db->fetchAll(
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
-                <a href="advising_history.php" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
+                <a href="advisingHistory.php" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">
                     View Full History
                 </a>
             <?php endif; ?>
