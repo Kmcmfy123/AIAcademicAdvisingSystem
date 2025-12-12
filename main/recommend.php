@@ -1,198 +1,176 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once __DIR__ . '/../includes/init.php';
 $auth->requireRole('student');
 
 $userId = $_SESSION['user_id'] ?? null;
-
-// DEBUG: Check if user ID is set
 if (!$userId) {
     echo "No user ID found in session.";
     exit;
 }
 
+// Get course recommendations
 $recommendations = getRecommendedCourses($userId);
-
-// DEBUG: dump recommendations to verify data
-// echo '<pre>';
-// var_dump($recommendations);
-// echo '</pre>';
-// exit;  // Stops page loading so you can see debug info
-
-// If you want to skip debug, comment out above and uncomment below for testing UI with sample data
-
-
 if (empty($recommendations)) {
-    $recommendations = [
-        [
-            'course' => [
-                'course_code' => 'CS101',
-                'course_name' => 'Intro to CS',
-                'credits' => 3,
-                'level' => 'freshman',
-                'department' => 'Computer Science',
-                'description' => 'Basics of programming and computer science',
-                'prerequisites' => json_encode([]),
-            ],
-            'reason' => 'Core requirement for your major',
-            'score' => 95,
+    $recommendations = [[
+        'course' => [
+            'course_code' => 'CS101',
+            'course_name' => 'Intro to CS',
+            'credits' => 3,
+            'level' => 'freshman',
+            'department' => 'Computer Science',
+            'description' => 'Basics of programming and computer science',
+            'prerequisites' => json_encode([]),
         ],
-        [
-            'course' => [
-                'course_code' => 'CS201',
-                'course_name' => 'Data Structures',
-                'credits' => 4,
-                'level' => 'sophomore',
-                'department' => 'Computer Science',
-                'description' => 'Learn about efficient data structures',
-                'prerequisites' => json_encode(['CS101']),
-            ],
-            'reason' => 'Recommended based on your completed courses',
-            'score' => 88,
-        ],
-    ];
+        'reason' => 'Core requirement for your major',
+        'score' => 95
+    ]];
 }
 
+$maxDisplay = 3;
+$displayedRecommendations = array_slice($recommendations, 0, $maxDisplay);
 
-if (isset($_GET['format']) && $_GET['format'] === 'json') {
-    header('Content-Type: application/json');
-    echo json_encode($recommendations);
-    exit;
-}
+// Get advising sessions
+$advisingSessions = $db->fetchAll(
+    "SELECT ads.*, u.first_name, u.last_name, pp.department 
+     FROM advising_sessions ads 
+     JOIN users u ON ads.professor_id=u.id 
+     LEFT JOIN professor_profiles pp ON u.id=pp.user_id 
+     WHERE ads.student_id=? AND ads.status='completed' 
+     ORDER BY ads.session_date DESC",
+    [$userId]
+) ?: [];
+$displayedSessions = array_slice($advisingSessions, 0, $maxDisplay);
+
+// Suggested resources
+$resources = getSuggestedResources($displayedRecommendations);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Course Recommendations - <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css" />
-
+    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
     <style>
-        /* Improved search panel to match your design */
-        .search-panel {
-            margin-top: 0;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: var(--light-color);
-            border: 1px solid #e2e8f0;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1rem;
+        .two-column-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 300px;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        /* Reduce space below alert so search panel moves closer */
-        .alert {
-            margin-bottom: 0.5rem;
+        .two-column-grid .card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
-        .recommendation-details p {
-            margin-bottom: 0.6rem;
-            color: var(--secondary-color);
+        .card-content {
+            flex: 1;
         }
 
         .reason-box {
             background: #d1fae5;
-            padding: 0.75rem;
+            padding: .75rem;
             border-radius: var(--border-radius);
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+            font-size: .9rem;
+            margin-top: .5rem;
             color: #065f46;
             border-left: 4px solid var(--success-color);
         }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .resource-item img {
+            width: 80px;
+            height: 45px;
+            object-fit: cover;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
         <div class="container">
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
-                <li><a href="student/dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="logout.php" class="nav-link">Logout</a></li>
+                <li><a href="../main/student/dashboard.php" class="nav-link">Dashboard</a></li>
+                <li><a href="../main/logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>
     </nav>
 
     <div class="container">
+        <h1 class="card-title" style="margin:2rem 0 1.5rem;">Course Recommendations</h1>
 
-    <!-- Upd: Moved here -->
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">Advising Session History</h2></div>
-
-        <?php if (empty($advisingSessions)): ?>
-            <p>No completed advising sessions yet.</p>
-        <?php else: ?>
-            <?php foreach ($advisingSessions as $session): ?>
-                <div style="border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
-                    <strong>Date:</strong> <?= date('F d, Y', strtotime($session['session_date'])) ?><br>
-                    <strong>Advisor:</strong> Prof. 
-                    <?= safe($session['first_name'] . ' ' . $session['last_name']) ?> 
-                    (<?= safe($session['department']) ?>)
+        <div class="two-column-grid">
+            <!-- Advising Session History -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Advising Session History</h2>
                 </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>       
+                <div class="card-content">
+                    <?php if (empty($displayedSessions)): ?>
+                        <p>No completed advising sessions yet.</p>
+                        <?php else: foreach ($displayedSessions as $s): ?>
+                            <div style="border-left:3px solid var(--primary-color);padding-left:1rem;margin-bottom:1rem;">
+                                <strong>Date:</strong> <?= date('F d, Y', strtotime($s['session_date'])) ?><br>
+                                <strong>Advisor:</strong> Prof. <?= sanitize($s['first_name'] . ' ' . $s['last_name']) ?> (<?= sanitize($s['department']) ?>)
+                            </div>
+                    <?php endforeach;
+                    endif; ?>
+                </div>
+            </div>
 
-        <h1 class="card-title" style="margin-bottom: 1.5rem;">Course Recommendations</h1>
+            <!-- Course Recommendations -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recommended Courses</h2>
+                </div>
+                <div class="card-content">
+                    <?php foreach ($displayedRecommendations as $rec): ?>
+                        <div style="border-bottom:1px solid #e2e8f0;padding-bottom:1rem;margin-bottom:1rem;">
+                            <h3><?= sanitize($rec['course']['course_code'] . ' - ' . $rec['course']['course_name']) ?></h3>
+                            <p><span class="badge badge-primary"><?= ucfirst($rec['course']['level']) ?></span>
+                                <span class="badge badge-success"><?= $rec['course']['credits'] ?> credits</span>
+                            </p>
+                            <p style="font-size:.9rem;color:#666;"><?= sanitize($rec['course']['description']) ?></p>
+                            <div class="reason-box"><strong>Why:</strong> <?= sanitize($rec['reason']) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                    <a href="viewMoreCourses.php" class="btn btn-primary">View More Courses</a>
+                </div>
+            </div>
 
-        <?php if (empty($recommendations)): ?>
-            <div class="alert alert-info">
-                No course recommendations available at this time. Please check back later or contact your advisor.
+            <!-- Suggested Learning Resources -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Suggested Learning Resources</h2>
+                </div>
+                <div class="card-content search-panel">
+                    <?php if (empty($resources)): ?>
+                        <p>No suggestions at this time. Keep up the good work!</p>
+                        <?php else: foreach ($resources as $r): ?>
+                            <div class="resource-item">
+                                <?php if (isset($r['thumbnail'])): ?>
+                                    <img src="<?= sanitize($r['thumbnail']) ?>" alt="Thumbnail">
+                                <?php endif; ?>
+                                <a href="<?= sanitize($r['url']) ?>" target="_blank"><strong><?= sanitize($r['title']) ?></strong> (<?= sanitize($r['source']) ?>)</a>
+                            </div>
+                    <?php endforeach;
+                    endif; ?>
+                </div>
             </div>
 
         </div>
-        <?php else: ?>
-            <?php foreach ($recommendations as $rec): ?>
-                <div class="recommendation-card card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
-                        <div class="recommendation-details" style="flex:1;">
-                            <h2 class="card-title" style="margin-bottom: 0.3rem;">
-                                <?= htmlspecialchars($rec['course']['course_code']) ?>
-                                <?= htmlspecialchars($rec['course']['course_name']) ?>
-                            </h2>
-
-                            <p>
-                                <span class="badge badge-primary"><?= ucfirst($rec['course']['level']) ?></span>
-                                <span class="badge badge-success"><?= $rec['course']['credits'] ?> credits</span>
-                                <span class="badge badge-warning"><?= htmlspecialchars($rec['course']['department']) ?></span>
-                            </p>
-
-                            <p><?= htmlspecialchars($rec['course']['description']) ?></p>
-
-                            <div class="reason-box">
-                                <strong>Why recommended:</strong><br>
-                                <?= htmlspecialchars($rec['reason']) ?>
-                            </div>
-
-                            <?php 
-                            $prerequisites = json_decode($rec['course']['prerequisites'], true);
-                            if (!empty($prerequisites)): ?>
-                                <p style="margin-top: 0.5rem;">
-                                    <strong>Prerequisites:</strong> <?= implode(', ', $prerequisites) ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- Scoring Badge -->
-                        <div class="recommendation-score">
-                            <?= $rec['score'] ?>
-                        </div>
-                    </div>
-                </div>
-
-                <?php endforeach; ?>
-
-                <!-- Link for search engine: https://programmablesearchengine.google.com/controlpanel/all -->
-                <div class="search-panel">
-                    <script async src="https://cse.google.com/cse.js?cx=10afcca3eb694482b"></script>
-                <div class="gcse-search"></div>
-
-                
-        <?php endif; ?>
     </div>
 </body>
-</html>
+
+</html> 

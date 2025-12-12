@@ -30,3 +30,5 @@ define('RECORDS_PER_PAGE', 20);
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+define('YOUTUBE_API_KEY', 'AIzaSyDmPUNH-hYByiad00aHeOxbCsTyYBAU4_c');
