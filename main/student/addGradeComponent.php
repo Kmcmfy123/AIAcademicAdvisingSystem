@@ -72,7 +72,7 @@ function safe($value) {
     <div class="container">
         <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
         <ul class="navbar-nav">
-            <li><a href="academicProfile.php?course_id=<?= $courseId ?>" class="nav-link">← Back to Profile</a></li>
+            <li><a href="academicProfile.php?course_id=<?= $courseId ?>" class="nav-link">Back to Profile</a></li>
         </ul>
     </div>
 </nav>

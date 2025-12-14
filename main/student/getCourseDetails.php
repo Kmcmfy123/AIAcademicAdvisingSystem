@@ -82,7 +82,7 @@ function calculatePeriodGrade($components, $syllabus) {
         }
         
         $percentage = $typeMaxScore > 0 ? ($typeScore / $typeMaxScore) * 100 : 0;
-        $weight = $breakdown[$period][$type] ?? 50; // default weight
+        $weight = $breakdown[$period][$type] ?? 40; // default weight
         
         $totalScore += $percentage * ($weight / 100);
         $totalWeight += $weight;
@@ -127,7 +127,7 @@ function safe($value, $fallback = 'N/A') {
                     </button>
                 </div>
             <?php else: ?>
-                <a href="uploadSyllabus.php" onclick="uploadSyllabus(<?= $courseId ?>)" class="btn btn-sm btn-primary no-print">
+                <a href="uploadSyllabus.php?course_id=<?= $course['id'] ?>" onclick="uploadSyllabus(<?= $courseId ?>)" class="btn btn-sm btn-primary no-print">
                     Upload Syllabus
             </a>
             <?php endif; ?>
@@ -224,7 +224,6 @@ function safe($value, $fallback = 'N/A') {
                         <div style="background: #f8fafc; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.5rem;">
                             <strong style="text-transform: capitalize; color: #374151;">
                                 <?php
-                                // Removed icons for clean look
                                 ?>
                                 <?= str_replace('_', ' ', $type) ?>
                             </strong>
@@ -305,11 +304,11 @@ function safe($value, $fallback = 'N/A') {
 
             <!-- Add Component Button -->
             <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                <button onclick="addComponent('<?= $period ?>', <?= $courseId ?>)" 
-                        class="btn btn-success no-print">
-                        <!-- Prelim Record Button fetch -->
-                    Add <?= ucfirst(str_replace('_', ' ', $period)) ?> Record
-                </button>
+                
+<a href="addGradeComponent.php?course_id=<?= (int)$courseId ?>&period=<?= $period ?>"
+   class="btn btn-success no-print">
+   Add <?= ucfirst(str_replace('_', ' ', $period)) ?> Record
+</a>
             </div>
         </div>
     <?php endforeach; ?>
@@ -319,6 +318,7 @@ function safe($value, $fallback = 'N/A') {
 
 <script>
 function addComponent(period, courseId) {
+    console.log("Redirecting with:", period, courseId); // Debugging line
     window.location.href = `addGradeComponent.php?course_id=${courseId}&period=${period}`;
 }
 

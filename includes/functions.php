@@ -1,7 +1,5 @@
 <?php
-// -------------------------
-// Utility Functions
-// -------------------------
+
 function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
 }
@@ -42,68 +40,64 @@ function formatGPA($gpa) {
     return number_format((float)$gpa, 2);
 }
 
-// -------------------------
-// Recommendation Engine
-// -------------------------
 function getRecommendedCourses($studentId) {
-    $db = Database::getInstance();
-    
-    $student = $db->fetchOne(
-        "SELECT sp.*, u.email, sp.major, sp.credits_completed, sp.gpa
-         FROM student_profiles sp 
-         JOIN users u ON sp.user_id = u.id 
-         WHERE sp.user_id = ?",
-        [$studentId]
-    );
-    
-    if (!$student) return [];
+$recommendations = [];
 
-    $completedCourses = $db->fetchAll(
-        "SELECT c.course_code, c.id 
-         FROM course_enrollments ce 
-         JOIN courses c ON ce.course_id = c.id 
-         WHERE ce.student_id = ? AND ce.status = 'completed'",
-        [$studentId]
-    );
+$analysis = analyzeStudentPerformance($GLOBALS['db'], $studentId);
 
-    $completedCodes = array_column($completedCourses, 'course_code');
-    $completedIds = array_column($completedCourses, 'id');
+$gpa = $analysis['profile']['gpa'] ?? 0;
+$standing = strtolower($analysis['profile']['academic_standing'] ?? '');
+$grades = $analysis['grades'];
+$remarksText = strtolower(implode(' ', $analysis['remarks']));
 
-    $allCourses = $db->fetchAll("SELECT * FROM courses WHERE is_active = TRUE");
-    $recommendations = [];
+$averageGrade = null;
+if (!empty($grades)) {
+$averageGrade = !empty($grades)
+    ? array_sum($grades) / count($grades)
+    : null;
 
-    foreach ($allCourses as $course) {
-        if (in_array($course['id'], $completedIds)) continue;
+}
 
-        $prerequisites = json_decode($course['prerequisites'], true) ?? [];
-        $prerequisitesMet = true;
-        foreach ($prerequisites as $prereq) {
-            if (!in_array($prereq, $completedCodes)) {
-                $prerequisitesMet = false;
-                break;
-            }
-        }
-        if (!$prerequisitesMet) continue;
+/* ---------- RULE-BASED AI LOGIC ---------- */
 
-        $score = 0;
-        $levelMap = ['freshman'=>1, 'sophomore'=>2, 'junior'=>3, 'senior'=>4];
-        $studentLevel = ceil($student['credits_completed']/30);
-        $courseLevel = $levelMap[$course['level']] ?? 0;
-        if ($courseLevel == $studentLevel || $courseLevel == $studentLevel +1) $score += 50;
-        if ($student['gpa']>=3.5 && in_array($course['level'], ['senior','graduate'])) $score +=30;
-        if ($course['department']==$student['major']) $score +=40;
-        $creditsNeeded = 120 - $student['credits_completed'];
-        if ($creditsNeeded >= $course['credits']) $score +=20;
+// Acad Standing
+if (str_contains($standing, 'probation') || $gpa < 2.0) {
+    $recommendations[] = [
+        'reason' => 'Your academic standing indicates risk. Lighter or foundation courses are recommended.',
+        'score' => 92
+    ];
+}
 
-        $recommendations[] = [
-            'course'=>$course,
-            'score'=>$score,
-            'reason'=>generateRecommendationReason($course, $student, $prerequisitesMet)
-        ];
-    }
+// Course Performance
+if ($averageGrade !== null && $averageGrade < 75) {
+    $recommendations[] = [
+        'reason' => 'Low performance detected in this course. Remedial and practice-focused subjects are advised.',
+        'score' => 90
+    ];
+}
 
-    usort($recommendations, fn($a,$b)=>$b['score']-$a['score']);
-    return array_slice($recommendations,0,10);
+// Prof Remarks/note Analysis
+if (str_contains($remarksText, 'improve') || str_contains($remarksText, 'weak')) {
+    $recommendations[] = [
+        'reason' => 'Professor remarks suggest improvement areas. Skill-building courses are recommended.',
+        'score' => 88
+    ];
+}
+
+if (str_contains($remarksText, 'excellent') || str_contains($remarksText, 'strong')) {
+    $recommendations[] = [
+        'reason' => 'Strong professor feedback detected. Advanced or specialization courses are recommended.',
+        'score' => 94
+    ];
+}
+
+// Default fallback
+if (empty($recommendations)) {
+    $recommendations[] = [
+        'reason' => 'Based on your academic record, you are on track. Core and elective progression courses are recommended.',
+        'score' => 85
+    ];
+}
 }
 
 function generateRecommendationReason($course, $student, $prerequisitesMet) {
@@ -118,9 +112,8 @@ function generateRecommendationReason($course, $student, $prerequisitesMet) {
     return implode("; ", $reasons);
 }
 
-// -------------------------
-// Wikipedia Search
-// -------------------------
+
+// API - Wikipedia Search
 function searchWikipedia($query, $limit=3) {
     $query .= " computer science";
     $url = "https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit={$limit}&srsearch=".urlencode($query);
@@ -143,9 +136,7 @@ function searchWikipedia($query, $limit=3) {
     return $results;
 }
 
-// -------------------------
-// YouTube Search
-// -------------------------
+// API - YouTube Search
 function searchYouTube($query, $limit=3) {
     $query .= " tutorial";
     $apiKey = YOUTUBE_API_KEY;
@@ -169,9 +160,8 @@ function searchYouTube($query, $limit=3) {
     return $results;
 }
 
-// -------------------------
+
 // Aggregate suggested resources
-// -------------------------
 function getSuggestedResources($displayedRecommendations) {
     $resources=[];
     foreach($displayedRecommendations as $rec){
@@ -195,5 +185,40 @@ function getSuggestedResources($displayedRecommendations) {
         ];
     }
     return $filtered;
+}
+
+function analyzeStudentPerformance($db, $userId, $courseId = null)
+{
+    // Student profile
+    $profile = $db->fetchOne("
+        SELECT gpa, academic_standing
+        FROM student_profiles
+        WHERE user_id = ?
+    ", [$userId]);
+
+    // Course grades (if course selected)
+    $grades = [];
+    if ($courseId) {
+        $grades = $db->fetchAll("
+            SELECT period, final_grade
+            FROM course_grades
+            WHERE student_id = ? AND course_id = ?
+        ", [$userId, $courseId]);
+    }
+
+    // Professor remarks
+    $remarks = $db->fetchAll("
+        SELECT remark_text
+        FROM course_specific_remarks
+        WHERE student_id = ?
+        " . ($courseId ? "AND course_id = ?" : ""),
+        $courseId ? [$userId, $courseId] : [$userId]
+    );
+
+    return [
+        'profile' => $profile,
+        'grades' => $grades,
+        'remarks' => array_column($remarks, 'remark_text')
+    ];
 }
 ?>

@@ -6,6 +6,11 @@ $userId = $_SESSION['user_id'];
 $courseId = $_GET['course_id'] ?? null;
 $isReplace = isset($_GET['replace']);
 
+// echo "Course ID: " . $courseId;
+// echo "<br>User ID: " . $_SESSION['user_id'];
+// exit;
+
+
 if (!$courseId) {
     die("Course ID required.");
 }
@@ -154,7 +159,7 @@ function safe($value) {
     <div class="container">
         <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
         <ul class="navbar-nav">
-            <li><a href="academicProfile.php?course_id=<?= $courseId ?>" class="nav-link">← Back to Profile</a></li>
+            <li><a href="academicProfile.php?course_id=<?= $courseId ?>" class="nav-link">Back to Profile</a></li>
         </ul>
     </div>
 </nav>
@@ -238,7 +243,7 @@ function safe($value) {
                         </div>
                         
                         <div class="weight-input">
-                            <label for="<?= $periodKey ?>_activity">Activity % (Optional)</label>
+                            <label for="<?= $periodKey ?>_activity">Character %</label>
                             <input type="number" 
                                    name="<?= $periodKey ?>_activity" 
                                    id="<?= $periodKey ?>_activity"
@@ -247,11 +252,12 @@ function safe($value) {
                                    max="100" 
                                    step="0.01"
                                    placeholder="0"
-                                   onchange="calculateTotal('<?= $periodKey ?>')">
+                                   onchange="calculateTotal('<?= $periodKey ?>')"
+                                   required>
                         </div>
                         
                         <div class="weight-input">
-                            <label for="<?= $periodKey ?>_performance">Performance % (Optional)</label>
+                            <label for="<?= $periodKey ?>_performance">Project %</label>
                             <input type="number" 
                                    name="<?= $periodKey ?>_performance" 
                                    id="<?= $periodKey ?>_performance"
@@ -260,7 +266,8 @@ function safe($value) {
                                    max="100" 
                                    step="0.01"
                                    placeholder="0"
-                                   onchange="calculateTotal('<?= $periodKey ?>')">
+                                   onchange="calculateTotal('<?= $periodKey ?>')"
+                                   required>
                         </div>
                     </div>
                     

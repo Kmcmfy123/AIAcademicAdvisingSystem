@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/init.php';
+
 $auth->requireRole('student');
 
 $userId = $_SESSION['user_id'] ?? null;
@@ -21,6 +22,29 @@ if ($courseId) {
         WHERE c.id = ? AND ce.student_id = ?
     ", [$courseId, $userId]);
 }
+
+$profile = $db->fetchOne("
+    SELECT gpa, academic_standing
+    FROM student_profiles
+    WHERE user_id = ?
+", [$userId]);
+
+$gradeRow = $db->fetchOne("
+    SELECT *
+    FROM course_grades
+    WHERE student_id = ? AND course_id = ?
+", [$userId, $courseId]);
+
+$grades = [];
+
+if ($gradeRow) {
+    foreach (['prelim', 'midterm', 'semi_final', 'final', 'final_grade'] as $col) {
+        if (isset($gradeRow[$col]) && is_numeric($gradeRow[$col])) {
+            $grades[] = $gradeRow[$col];
+        }
+    }
+}
+
 
 // Get AI insights for this course
 $insights = $db->fetchAll("
@@ -223,7 +247,7 @@ function safe($value, $fallback = 'N/A') {
                         </p>
                     </div>
                     <a href="student/academicProfile.php<?= $courseId ? '?course_id=' . $courseId : '' ?>" class="btn btn-secondary">
-                        ← Back to Academic Profile
+                        Back to Academic Profile
                     </a>
                 </div>
             <?php else: ?>
