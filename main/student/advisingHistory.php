@@ -185,7 +185,7 @@ $stats = [
 
                                 <?php if ($session['recommendations']): ?>
                                     <div style="margin-bottom: 1rem;">
-                                        <strong>📋 Advisor Recommendations:</strong>
+                                        <strong>Advisor Recommendations:</strong>
                                         <p style="margin: 0.5rem 0; padding: 0.75rem; background: #d1fae5; border-left: 3px solid var(--success-color); border-radius: 4px;">
                                             <?= nl2br(htmlspecialchars($session['recommendations'])) ?>
                                         </p>

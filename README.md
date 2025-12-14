@@ -241,6 +241,89 @@ CREATE TABLE activity_logs (
 
 
 
+-- Added Tables/Updated table Below:
+
+
+ALTER TABLE student_profiles 
+ADD COLUMN current_section VARCHAR(20) AFTEr major;
+
+-- sections for irregular students
+CREATE TABLE IF NOT EXISTS course_sections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    section VARCHAR(20) NOT NULL,
+    school_year VARCHAR(20) NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    INDEX idx_student_course (student_id, course_id)
+) ENGINE=InnoDB;
+
+-- course_grades updated
+CREATE TABLE IF NOT EXISTS grade_components (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_grade_id INT NOT NULL,
+    period ENUM('prelim', 'midterm', 'semi_final', 'final') NOT NULL,
+    component_type ENUM('class_standing', 'exam', 'activity', 'performance') NOT NULL,
+    component_name VARCHAR(100),
+    score DECIMAL(5,2),
+    max_score DECIMAL(5,2),
+    weight DECIMAL(5,2), -- percentage weight
+    date_recorded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (course_grade_id) REFERENCES course_grades(id) ON DELETE CASCADE,
+    INDEX idx_period (course_grade_id, period)
+) ENGINE=InnoDB;
+
+-- for course syllabus
+CREATE TABLE IF NOT EXISTS course_syllabi (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    school_year VARCHAR(20) NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+    professor_id INT,
+    file_path VARCHAR(500),
+    grading_breakdown JSON, -- stores weight percentages
+    topics JSON, -- course topics for AI analysis
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (professor_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_course_year (course_id, school_year, semester)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS course_specific_remarks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    professor_id INT NOT NULL,
+    remark_type ENUM('warning', 'improvement', 'encouragement', 'concern') NOT NULL,
+    remark_text TEXT NOT NULL,
+    action_required BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (professor_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_student_course (student_id, course_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ai_insights (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT,
+    insight_type ENUM('performance_trend', 'risk_alert', 'study_recommendation', 'pathway_suggestion') NOT NULL,
+    insight_text TEXT NOT NULL,
+    confidence_score DECIMAL(3,2),
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_acknowledged BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL,
+    INDEX idx_student_type (student_id, insight_type)
+) ENGINE=InnoDB;
+
+
+
+
 -- From VS Code to Github
 -- Git add ., git commit -m "message", git push
 
@@ -314,3 +397,31 @@ INSERT INTO courses (course_code, course_name, credits, department, level, prere
 ('CS260', 'Databases I', 3, 'Computer Science', 'sophomore', '["CS101"]', 'Relational modeling and SQL fundamentals.', TRUE),
 ('CS320', 'Web Application Development', 3, 'Computer Science', 'junior', '["CS201", "CS260"]', 'Building full-stack web apps with modern frameworks.', TRUE),
 ('CS410', 'Machine Learning Fundamentals', 3, 'Computer Science', 'senior', '["CS210", "CS260"]', 'Supervised and unsupervised learning techniques.', TRUE);
+
+-- Change ? with the user_id of your account.
+INSERT INTO student_profiles (user_id, student_id, major, gpa, credits_completed, enrollment_year, expected_graduation, academic_standing)
+VALUES (?, 'STU014', 'Computer Science', 3.45, 45, 2022, 2026, 'good')
+AS new
+ON DUPLICATE KEY UPDATE major = new.major;
+
+-- 2. Add some course enrollments (make sure these course IDs exist first)
+INSERT INTO course_enrollments (student_id, course_id, semester, grade, status) VALUES
+(14, 1, '1st', 'A', 'completed'),
+(14, 2, '2nd', 'A-', 'completed'),
+(14, 3, '2nd', 'B+', 'completed'),
+(14, 4, '2nd', 'A', 'completed'),
+(14, 5, '1st', NULL, 'enrolled');
+
+-- 3. Add an advising session, change qustion mark again
+INSERT INTO advising_sessions (student_id, professor_id, session_date, notes, recommendations, status)
+VALUES (14, ?, NOW(), 'Discussed Spring 2025 courses', '["CS301", "CS302"]', 'completed');
+
+commit; -- saving
+
+INSERT INTO course_grades (student_id, course_id, school_year, semester)
+VALUES 
+		(14, 1, '2024-2025', '1st'),
+       (14, 2, '2024-2025', '2nd'),
+       (14, 3, '2024-2025', '2nd'),
+       (14, 4, '2024-2025', '2nd'),
+       (14, 5, '2024-2025', '1st');

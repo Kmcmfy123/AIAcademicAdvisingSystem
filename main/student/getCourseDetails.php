@@ -127,9 +127,9 @@ function safe($value, $fallback = 'N/A') {
                     </button>
                 </div>
             <?php else: ?>
-                <button onclick="uploadSyllabus(<?= $courseId ?>)" class="btn btn-sm btn-primary no-print">
+                <a href="uploadSyllabus.php" onclick="uploadSyllabus(<?= $courseId ?>)" class="btn btn-sm btn-primary no-print">
                     Upload Syllabus
-                </button>
+            </a>
             <?php endif; ?>
         </div>
         
@@ -307,6 +307,7 @@ function safe($value, $fallback = 'N/A') {
             <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
                 <button onclick="addComponent('<?= $period ?>', <?= $courseId ?>)" 
                         class="btn btn-success no-print">
+                        <!-- Prelim Record Button fetch -->
                     Add <?= ucfirst(str_replace('_', ' ', $period)) ?> Record
                 </button>
             </div>
