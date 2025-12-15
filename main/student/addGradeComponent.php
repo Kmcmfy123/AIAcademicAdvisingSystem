@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $componentType = $_POST['component_type'] ?? '';
     $componentName = $_POST['component_name'] ?? '';
     $score = $_POST['score'] ?? 0;
-    $maxScore = $_POST['max_score'] ?? 100;
+    $maxScore = $_POST['max_score'] ?? 50;
     $weight = $_POST['weight'] ?? 50;
     $notes = $_POST['notes'] ?? '';
     
@@ -95,10 +95,10 @@ function safe($value) {
                 <select name="component_type" id="component_type" required 
                         style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
                     <option value="">Select type...</option>
-                    <option value="class_standing">Class Standing</option>
+                    <option value="class_standing">Class Standing (Quizzes, Laboratory Activity/Hands-on exercises, Assignments)</option>
                     <option value="exam">Exam</option>
                     <option value="activity">Activity</option>
-                    <option value="performance">Performance Task</option>
+                    <option value="performance">Project Performance Task</option>
                 </select>
             </div>
 
@@ -124,7 +124,7 @@ function safe($value) {
                     <label for="max_score" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
                         Max Score *
                     </label>
-                    <input type="number" name="max_score" id="max_score" required step="0.01" min="0" value="100"
+                    <input type="number" name="max_score" id="max_score" required step="0.01" min="0" value="50"
                            style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
                 </div>
 
@@ -132,7 +132,7 @@ function safe($value) {
                     <label for="weight" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
                         Weight (%) *
                     </label>
-                    <input type="number" name="weight" id="weight" required step="0.01" min="0" max="100" value="50"
+                    <input type="number" name="weight" id="weight" required step="0.01" min="0" max="50" value="50"
                            style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
                 </div>
             </div>
