@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/../includes/init.php';
 $auth->requireLogin();
 
 $userId = $_SESSION['user_id'];
@@ -74,12 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $error = 'Failed to update profile.';
             }
         } elseif ($_POST['action'] === 'change_password') {
-            $currentPassword = $_POST['current_password'];
-            $newPassword = $_POST['new_password'];
-            $confirmPassword = $_POST['confirm_password'];
-            
-            // Verify current password
-            if (!password_verify($currentPassword, $user['password'])) {
+            $currentPassword = $_POST['current_password'] ?? '';
+            $newPassword = $_POST['new_password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+
+            $storedHash = $user['password_hash'] ?? null;
+
+            if (!$storedHash) {
+                $error = 'Password cannot be changed: no password is set for this account.';
+            } elseif (!password_verify($currentPassword, $storedHash)) {
                 $error = 'Current password is incorrect.';
             } elseif ($newPassword !== $confirmPassword) {
                 $error = 'New passwords do not match.';
@@ -88,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
                 $result = $db->execute(
-                    "UPDATE users SET password = ? WHERE id = ?",
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
                     [$hashedPassword, $userId]
                 );
-                
+
                 if ($result) {
                     $message = 'Password changed successfully!';
                 } else {
@@ -116,9 +119,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <div class="container">
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
-                <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="profile.php" class="nav-link">Profile</a></li>
-                <li><a href="../logout.php" class="nav-link">Logout</a></li>
+                <li>
+                    <a href="<?= $userRole === 'professor' 
+                        ? 'professor/dashboard_prof.php' 
+                        : ($userRole === 'student' 
+                            ? 'student/dashboard.php' 
+                            : 'admin/dashboard.php') ?>" 
+                       class="nav-link">Dashboard</a>
+                </li>
+                <li><a href="accountProfile.php" class="nav-link">Profile</a></li>
+                <li><a href="../main/logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>
     </nav>

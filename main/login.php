@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect(APP_URL . '/main/student/dashboard.php');
                     break;
                 case 'professor':
-                    redirect(APP_URL . '/main/professor/dashboard.php');
+                    redirect(APP_URL . '/main/professor/dashboard_prof.php');
                     break;
                 case 'admin':
                     redirect(APP_URL . '/main/admin/dashboard.php');
@@ -38,6 +38,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?= APP_NAME ?></title>
     <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <script>
+    document.addEventListener("click", function (e) {
+
+    // EDIT
+    if (e.target.classList.contains("edit-btn")) {
+        const id = e.target.dataset.id;
+        console.log("Editing:", id);
+        window.location.href = "editGradeComponent.php?id=" + id;
+    }
+
+    // DELETE
+    if (e.target.classList.contains("delete-btn")) {
+        const id = e.target.dataset.id;
+
+        if (!confirm("Delete this record?")) return;
+
+        fetch("deleteGradeComponent.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) location.reload();
+            else alert(res.message || "Delete failed");
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Delete error");
+        });
+    }
+
+});
+
+    function addComponent(period, courseId) {
+        console.log("Redirecting with:", period, courseId); // Debugging line
+        window.location.href = `addGradeComponent.php?course_id=${courseId}&period=${period}`;
+    }
+
+    function editComponent(componentId) {
+        if (!componentId) return;
+        window.location.href = `${BASE_URL}/editGradeComponent.php?id=${componentId}`;
+    }
+
+    function deleteComponent(componentId, courseId) {
+        if (!componentId) return;
+        if (!confirm('Are you sure you want to delete this record?')) return;
+
+        fetch(`${BASE_URL}/deleteGradeComponent.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: componentId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) window.location.reload();
+            else alert(data.message || 'Failed to delete');
+        })
+        .catch(console.error);
+    }
+
+    function uploadSyllabus(courseId) {
+        window.location.href = `uploadSyllabus.php?course_id=${courseId}`;
+    }
+
+    function replaceSyllabus(courseId) {
+        if (confirm('Replace the existing syllabus? The old syllabus will be archived.')) {
+            window.location.href = `uploadSyllabus.php?course_id=${courseId}&replace=1`;
+        }
+    }
+</script>
 </head>
 <body>
     <div class="container" style="max-width: 450px; margin-top: 100px;">

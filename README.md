@@ -114,6 +114,20 @@ CREATE TABLE course_grades (
     FOREIGN KEY (course_id) REFERENCES courses(id)
 );
 
+CREATE TABLE IF NOT EXISTS grade_components (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_grade_id INT NOT NULL,
+    period ENUM('prelim', 'midterm', 'semi_final', 'final') NOT NULL,
+    component_type ENUM('class_standing', 'exam', 'activity', 'performance') NOT NULL,
+    component_name VARCHAR(100),
+    score DECIMAL(5,2),
+    max_score DECIMAL(5,2),
+    weight DECIMAL(5,2), -- percentage weight
+    date_recorded TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (course_grade_id) REFERENCES course_grades(id) ON DELETE CASCADE,
+    INDEX idx_period (course_grade_id, period)
+) ENGINE=InnoDB;
 
 CREATE TABLE learning_resources (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,6 +138,7 @@ CREATE TABLE learning_resources (
     url VARCHAR(500) NOT NULL,
     INDEX idx_course_risk (course_code, risk_level)
 ) ENGINE=InnoDB;
+
 -- Users table (handles all user types)
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,6 +213,7 @@ CREATE TABLE course_enrollments (
     INDEX idx_student_semester (student_id, semester)
 ) ENGINE=InnoDB;
 select * from course_enrollments;
+
 -- Advising sessions
 CREATE TABLE advising_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -322,7 +338,48 @@ CREATE TABLE IF NOT EXISTS ai_insights (
 ) ENGINE=InnoDB;
 
 
+-- AI processing log (for debugging)
+CREATE TABLE IF NOT EXISTS ai_processing_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT,
+    operation_type VARCHAR(50),
+    status ENUM('success', 'failed', 'pending'),
+    error_message TEXT,
+    processing_time INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_student (student_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB;
 
+-- Table to track which professor teaches which course/section
+CREATE TABLE IF NOT EXISTS professor_course_assignments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    professor_id INT NOT NULL,
+    course_id INT NOT NULL,
+    section VARCHAR(50),
+    semester VARCHAR(20),
+    school_year INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (professor_id) REFERENCES users(id),
+    FOREIGN KEY (course_id) REFERENCES courses(id),
+    UNIQUE KEY unique_assignment (professor_id, course_id, section, semester, school_year)
+);
+
+-- Copilot VSC suggestion: Add year_level column to student_profiles table
+-- Run this SQL query in phpMyAdmin or your MySQL client
+
+ALTER TABLE student_profiles 
+ADD COLUMN year_level ENUM('freshman', 'sophomore', 'junior', 'senior', 'graduate') 
+AFTER major;
+
+ALTER TABLE advising_sessions 
+ADD COLUMN feedback TEXT NULL,
+ADD COLUMN performance_rating INT NULL,
+ADD COLUMN risk_level ENUM('low', 'medium', 'high') NULL DEFAULT NULL;
+
+ALTER TABLE course_specific_remarks 
+MODIFY COLUMN course_id INT NULL;
 
 -- From VS Code to Github
 -- Git add ., git commit -m "message", git push
@@ -425,3 +482,13 @@ VALUES
        (14, 3, '2024-2025', '2nd'),
        (14, 4, '2024-2025', '2nd'),
        (14, 5, '2024-2025', '1st');
+
+
+
+-- Install Composer
+Download from: https://getcomposer.org/download/
+or manually(Suggested by Claude):
+bash
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"

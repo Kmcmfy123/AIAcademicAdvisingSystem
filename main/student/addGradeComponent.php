@@ -19,22 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $weight = $_POST['weight'] ?? 50;
     $notes = $_POST['notes'] ?? '';
     
-    // Get or create course_grades entry
+    // Get or create course_grades entry (use enrollment school_year when available)
     $courseGrade = $db->fetchOne("
         SELECT id FROM course_grades 
         WHERE student_id = ? AND course_id = ?
     ", [$userId, $courseId]);
     
     if (!$courseGrade) {
-        $db->query("
+        $courseGradeId = $db->insert("
             INSERT INTO course_grades (student_id, course_id, semester, school_year)
-            SELECT ?, ?, ce.semester, YEAR(NOW())
+            SELECT ?, ?, ce.semester, IFNULL(ce.school_year, YEAR(NOW()))
             FROM course_enrollments ce
             WHERE ce.student_id = ? AND ce.course_id = ?
             LIMIT 1
         ", [$userId, $courseId, $userId, $courseId]);
-        
-        $courseGradeId = $db->lastInsertId();
     } else {
         $courseGradeId = $courseGrade['id'];
     }
@@ -98,7 +96,7 @@ function safe($value) {
                     <option value="class_standing">Class Standing (Quizzes, Laboratory Activity/Hands-on exercises, Assignments)</option>
                     <option value="exam">Exam</option>
                     <option value="activity">Activity</option>
-                    <option value="performance">Project Performance Task</option>
+                    <option value="performance">Project / Performance Task</option>
                 </select>
             </div>
 
@@ -132,7 +130,7 @@ function safe($value) {
                     <label for="weight" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
                         Weight (%) *
                     </label>
-                    <input type="number" name="weight" id="weight" required step="0.01" min="0" max="50" value="50"
+                    <input type="number" name="weight" id="weight" required step="0.01" min="0" max="50" value="40"
                            style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;">
                 </div>
             </div>

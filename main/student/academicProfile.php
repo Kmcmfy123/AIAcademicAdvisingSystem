@@ -128,7 +128,7 @@ function safe($value, $fallback = 'N/A') {
 <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem;">
         <h1>Academic Profile & Records</h1>
-        <button onclick="window.print()" class="btn btn-primary no-print">Download/Print Records</button>
+        <!-- <button onclick="window.print()" class="btn btn-primary no-print">Download/Print Records</button> -->
     </div>
 
     <!-- STUDENT INFORMATION -->
@@ -140,7 +140,7 @@ function safe($value, $fallback = 'N/A') {
             <div><strong>Student ID:</strong><br><?= safe($student['school_id']) ?></div>
             <div><strong>Major:</strong><br><?= safe($student['major']) ?></div>
             <div><strong>Current Section:</strong><br><?= safe($student['current_section']) ?></div>
-            <div><strong>Academic Standing:</strong><br><?= safe($student['academic_standing']) ?></div>
+            <div><strong>Academic Standing:</strong><br><?= ucfirst(safe($student['academic_standing'])) ?></div>
             <div><strong>Current GPA:</strong><br><?= formatGPA($student['gpa']) ?></div>
             <div><strong>Credits Completed:</strong><br><?= $totalCreditsCompleted ?> units</div>
         </div>
@@ -169,7 +169,10 @@ function safe($value, $fallback = 'N/A') {
     <!-- COURSE SELECTION -->
     <div class="card no-print">
         <div class="card-header">
-            <h2 class="card-title">Select a Course to View Records</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap: wrap;">
+                <h2 class="card-title" style="margin:0;">Select a Course to View Records</h2>
+                <a href="joinCourse.php" class="btn btn-primary">+ Join Course</a>
+            </div>
         </div>
         
         <div class="view-toggle">

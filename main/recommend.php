@@ -11,6 +11,9 @@ if (!$userId) {
     exit;
 }
 
+// Initialize AI Engine
+$aiEngine = new AIEngine($db);
+
 // Fetch selected course details if course_id provided
 $selectedCourse = null;
 if ($courseId) {
@@ -23,30 +26,19 @@ if ($courseId) {
     ", [$courseId, $userId]);
 }
 
-$profile = $db->fetchOne("
-    SELECT gpa, academic_standing
-    FROM student_profiles
-    WHERE user_id = ?
-", [$userId]);
+// ===================== AI ANALYSIS SECTION =====================
 
-$gradeRow = $db->fetchOne("
-    SELECT *
-    FROM course_grades
-    WHERE student_id = ? AND course_id = ?
-", [$userId, $courseId]);
+// Check if we need to regenerate AI insights
+$regenerate = isset($_GET['regenerate']) && $_GET['regenerate'] === '1';
 
-$grades = [];
-
-if ($gradeRow) {
-    foreach (['prelim', 'midterm', 'semi_final', 'final', 'final_grade'] as $col) {
-        if (isset($gradeRow[$col]) && is_numeric($gradeRow[$col])) {
-            $grades[] = $gradeRow[$col];
-        }
-    }
+if ($courseId && $regenerate) {
+    // Trigger AI analysis
+    $aiEngine->analyzeStudentPerformance($userId, $courseId);
+    header("Location: recommend.php?course_id={$courseId}");
+    exit;
 }
 
-
-// Get AI insights for this course
+// Fetch existing AI insights
 $insights = $db->fetchAll("
     SELECT * FROM ai_insights
     WHERE student_id = ? " . ($courseId ? "AND course_id = ?" : "") . "
@@ -54,7 +46,44 @@ $insights = $db->fetchAll("
     LIMIT 5
 ", $courseId ? [$userId, $courseId] : [$userId]);
 
-// Get professor remarks for this course
+// If no insights exist, generate them automatically
+if (empty($insights) && $courseId) {
+    try {
+        $aiEngine->analyzeStudentPerformance($userId, $courseId);
+        // Reload insights
+        $insights = $db->fetchAll("
+            SELECT * FROM ai_insights
+            WHERE student_id = ? AND course_id = ?
+            ORDER BY generated_at DESC
+            LIMIT 5
+        ", [$userId, $courseId]);
+    } catch (Exception $e) {
+        error_log("AI Analysis failed: " . $e->getMessage());
+    }
+}
+
+// Get AI-generated learning resources
+$resources = [];
+if ($courseId) {
+    try {
+        $resources = $aiEngine->generateLearningResources($userId, $courseId);
+    } catch (Exception $e) {
+        error_log("Resource generation failed: " . $e->getMessage());
+        // Fallback to database stored resources
+        $resources = getSuggestedResources([]);
+    }
+}
+
+// Get course recommendations
+$recommendations = [];
+try {
+    $recommendations = $aiEngine->recommendNextCourses($userId);
+} catch (Exception $e) {
+    error_log("Course recommendations failed: " . $e->getMessage());
+    $recommendations = getRecommendedCourses($userId);
+}
+
+// Get professor remarks
 $professorRemarks = $db->fetchAll("
     SELECT csr.*, u.first_name, u.last_name, c.course_code, c.course_name
     FROM course_specific_remarks csr
@@ -64,27 +93,6 @@ $professorRemarks = $db->fetchAll("
     ORDER BY csr.created_at DESC
     LIMIT 10
 ", $courseId ? [$userId, $courseId] : [$userId]);
-
-// Get course recommendations
-$recommendations = getRecommendedCourses($userId);
-if (empty($recommendations)) {
-    $recommendations = [[
-        'course' => [
-            'course_code' => 'CS101',
-            'course_name' => 'Intro to CS',
-            'credits' => 3,
-            'level' => 'freshman',
-            'department' => 'Computer Science',
-            'description' => 'Basics of programming and computer science',
-            'prerequisites' => json_encode([]),
-        ],
-        'reason' => 'Core requirement for your major',
-        'score' => 95
-    ]];
-}
-
-$maxDisplay = $courseId ? 6 : 3; // Show more if course-specific
-$displayedRecommendations = array_slice($recommendations, 0, $maxDisplay);
 
 // Get advising sessions
 $advisingSessions = $db->fetchAll(
@@ -98,8 +106,9 @@ $advisingSessions = $db->fetchAll(
     $courseId ? [$userId, '%"' . $courseId . '"%'] : [$userId]
 ) ?: [];
 
-// Suggested learning resources
-$resources = getSuggestedResources($displayedRecommendations);
+$maxDisplay = $courseId ? 6 : 3;
+$recommendations = $recommendations ?? [];
+$displayedRecommendations = array_slice($recommendations, 0, $maxDisplay);
 
 function safe($value, $fallback = 'N/A') {
     return htmlspecialchars($value ?? $fallback);
@@ -111,7 +120,7 @@ function safe($value, $fallback = 'N/A') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $selectedCourse ? safe($selectedCourse['course_code']) . ' - ' : '' ?>Recommendations - <?= APP_NAME ?></title>
+    <title><?= $selectedCourse ? safe($selectedCourse['course_code']) . ' - ' : '' ?>AI Recommendations - <?= APP_NAME ?></title>
     <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
     <style>
         .three-column-grid {
@@ -147,61 +156,35 @@ function safe($value, $fallback = 'N/A') {
             background: #d1fae5;
         }
 
-        .remark-card {
-            border: 1px solid #e2e8f0;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            background: white;
+        .ai-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #1e40af 0%, #3a68ffff 100%);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
         }
 
-        .remark-card.warning {
-            border-left: 4px solid #f59e0b;
-            background: #fffbeb;
-        }
-
-        .remark-card.encouragement {
-            border-left: 4px solid #10b981;
-            background: #f0fdf4;
-        }
-
-        .resource-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
+        .regenerate-btn {
+            background: #4c75fcff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            cursor: pointer;
             transition: background 0.2s;
         }
 
-        .resource-item:hover {
-            background: #f9fafb;
+        .regenerate-btn:hover:not(:disabled) {
+            background: #1e40af;
         }
 
-        .resource-item img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            margin-right: 0.75rem;
-            border-radius: 4px;
-        }
-
-        .resource-list {
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .recommendation-card {
-            border: 1px solid #e2e8f0;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            transition: all 0.3s;
-        }
-
-        .recommendation-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .regenerate-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         @media (max-width: 1200px) {
@@ -234,25 +217,36 @@ function safe($value, $fallback = 'N/A') {
     </nav>
 
     <div class="container" style="max-width: 1400px;">
+        <?php $hasCourse = !empty($courseId); ?>
         <div style="margin: 2rem 0 1.5rem;">
-            <?php if ($selectedCourse): ?>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h1 class="card-title" style="margin: 0;">
-                            <?= safe($selectedCourse['course_code']) ?>: Course Recommendations & Insights
-                        </h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div>
+                    <h1 class="card-title" style="margin: 0;">
+                        <?= $hasCourse
+                            ? safe($selectedCourse['course_code'] ?? 'Course') . ': Recommendations & Insights'
+                            : 'AI-Powered Recommendations & Insights' ?>
+                        <span class="ai-badge"><?= $hasCourse ? 'AI-Based' : 'AI Analysis' ?></span>
+                    </h1>
+                    <?php if ($hasCourse): ?>
                         <p style="margin: 0.5rem 0 0 0; color: #666;">
-                            <?= safe($selectedCourse['course_name']) ?> | 
-                            <?= safe($selectedCourse['semester']) ?> <?= safe($selectedCourse['school_year']) ?>
+                            <?= safe($selectedCourse['course_name'] ?? '') ?> |
+                            <?= safe($selectedCourse['semester'] ?? '') ?> <?= safe($selectedCourse['school_year'] ?? '') ?>
                         </p>
-                    </div>
-                    <a href="student/academicProfile.php<?= $courseId ? '?course_id=' . $courseId : '' ?>" class="btn btn-secondary">
-                        Back to Academic Profile
+                    <?php endif; ?>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button
+                        onclick="regenerateAI(<?= $hasCourse ? (int) $courseId : 0 ?>)"
+                        class="regenerate-btn"
+                        <?= $hasCourse ? '' : 'disabled title="Select a course to regenerate"' ?>
+                    >
+                        Regenerate AI Analysis
+                    </button>
+                    <a href="student/academicProfile.php<?= $hasCourse ? '?course_id=' . urlencode((string) $courseId) : '' ?>" class="btn btn-secondary">
+                        Back to Profile
                     </a>
                 </div>
-            <?php else: ?>
-                <h1 class="card-title">AIRecommendations & Insights</h1>
-            <?php endif; ?>
+            </div>
         </div>
 
         <div class="three-column-grid">
@@ -260,27 +254,37 @@ function safe($value, $fallback = 'N/A') {
             <!-- AI INSIGHTS & ALERTS -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Insights & Recommendations</h2>
+                    <h2 class="card-title">
+                        AI Insights & Recommendations
+                        <span class="ai-badge">AI</span>
+                    </h2>
                 </div>
                 <div class="card-content">
                     <?php if (empty($insights)): ?>
-                        <p>No insights generated yet. Complete more courses to get personalized insights.</p>
+                        <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px;">
+                            <p>Generating AI insights...</p>
+                            <p style="font-size: 0.9rem; color: #666;">
+                                AI is analyzing your performance. Refresh in a moment.
+                            </p>
+                        </div>
                     <?php else: ?>
                         <?php foreach ($insights as $insight): ?>
                             <div class="insight-card <?= $insight['insight_type'] === 'risk_alert' ? 'risk' : ($insight['insight_type'] === 'study_recommendation' ? 'success' : '') ?>">
-                                <strong style="text-transform: capitalize;">
-                                    <?= str_replace('_', ' ', $insight['insight_type']) ?>
-                                </strong>
-                                <?php if ($insight['confidence_score']): ?>
-                                    <span style="font-size: 0.85rem; color: #666;">
-                                        (Confidence: <?= round($insight['confidence_score'] * 100) ?>%)
-                                    </span>
-                                <?php endif; ?>
+                                <div style="display: flex; justify-content: between; align-items: start;">
+                                    <strong style="text-transform: capitalize;">
+                                        <?= str_replace('_', ' ', $insight['insight_type']) ?>
+                                    </strong>
+                                    <?php if ($insight['confidence_score']): ?>
+                                        <span style="font-size: 0.85rem; color: #666; margin-left: auto;">
+                                            Confidence: <?= round($insight['confidence_score'] * 100) ?>%
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 <p style="margin: 0.5rem 0 0 0;">
                                     <?= safe($insight['insight_text']) ?>
                                 </p>
                                 <small style="color: #666;">
-                                    <?= date('M d, Y', strtotime($insight['generated_at'])) ?>
+                                    Generated: <?= date('M d, Y g:i A', strtotime($insight['generated_at'])) ?>
                                 </small>
                             </div>
                         <?php endforeach; ?>
@@ -315,11 +319,6 @@ function safe($value, $fallback = 'N/A') {
                                 <p style="margin: 0;">
                                     <?= nl2br(safe($remark['remark_text'])) ?>
                                 </p>
-                                <?php if ($remark['action_required']): ?>
-                                    <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.85rem;">
-                                        Action required - please respond to this remark
-                                    </div>
-                                <?php endif; ?>
                                 <small style="color: #666; display: block; margin-top: 0.5rem;">
                                     <?= date('M d, Y g:i A', strtotime($remark['created_at'])) ?>
                                 </small>
@@ -329,10 +328,13 @@ function safe($value, $fallback = 'N/A') {
                 </div>
             </div>
 
-            <!-- SUGGESTED LEARNING RESOURCES -->
+            <!-- AI-GENERATED LEARNING RESOURCES -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Learning Resources</h2>
+                    <h2 class="card-title">
+                        Personalized Learning Resources
+                        <span class="ai-badge">AI</span>
+                    </h2>
                 </div>
                 <div class="card-content">
                     <?php if (empty($resources)): ?>
@@ -340,17 +342,17 @@ function safe($value, $fallback = 'N/A') {
                     <?php else: ?>
                         <div class="resource-list">
                             <?php foreach ($resources as $r): ?>
-                                <a href="<?= safe($r['url']) ?>" target="_blank" class="resource-item" style="text-decoration: none; color: inherit;">
-                                    <?php if (isset($r['thumbnail'])): ?>
-                                        <img src="<?= safe($r['thumbnail']) ?>" alt="Thumbnail">
-                                    <?php endif; ?>
+                                <a href="<?= safe($r['url']) ?>" target="_blank" class="resource-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 0.5rem; transition: background 0.2s;">
                                     <div style="flex: 1;">
                                         <strong style="display: block; margin-bottom: 0.25rem;">
                                             <?= safe($r['title']) ?>
                                         </strong>
-                                        <span style="font-size: 0.85rem; color: #666;">
-                                            <?= safe($r['source']) ?>
+                                        <span class="badge badge-<?= $r['type'] === 'video' ? 'danger' : 'primary' ?>" style="font-size: 0.75rem;">
+                                            <?= safe($r['type']) ?>
                                         </span>
+                                        <p style="font-size: 0.85rem; color: #666; margin: 0.25rem 0 0 0;">
+                                            <?= safe($r['description']) ?>
+                                        </p>
                                     </div>
                                 </a>
                             <?php endforeach; ?>
@@ -386,57 +388,72 @@ function safe($value, $fallback = 'N/A') {
                                         <?= nl2br(safe($session['notes'])) ?>
                                     </p>
                                 <?php endif; ?>
-                                <?php if ($session['follow_up_required']): ?>
-                                    <div style="background: #fef3c7; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; margin-top: 0.5rem;">
-                                        ⚠️ Follow-up required
-                                    </div>
-                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
             </div>
 
-            <!-- COURSE RECOMMENDATIONS -->
+            <!-- AI-POWERED COURSE RECOMMENDATIONS -->
             <div class="card full-width-section">
                 <div class="card-header">
-                    <h2 class="card-title">Recommended Courses for Next Semester</h2>
+                    <h2 class="card-title">
+                        AI-Recommended Courses for Next Semester
+                        <span class="ai-badge">AI</span>
+                    </h2>
                 </div>
                 <div class="card-content">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem;">
-                        <?php foreach ($displayedRecommendations as $rec): ?>
-                            <div class="recommendation-card">
-                                <h3 style="margin: 0 0 0.5rem 0;">
-                                    <?= safe($rec['course']['course_code']) ?> - <?= safe($rec['course']['course_name']) ?>
-                                </h3>
-                                <div style="margin-bottom: 0.75rem;">
-                                    <span class="badge badge-primary"><?= ucfirst($rec['course']['level']) ?></span>
-                                    <span class="badge badge-success"><?= $rec['course']['credits'] ?> credits</span>
-                                    <span class="badge badge-info">Match: <?= $rec['score'] ?>%</span>
-                                </div>
-                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.75rem;">
-                                    <?= safe($rec['course']['description']) ?>
-                                </p>
-                                <div style="background: #d1fae5; padding: 0.75rem; border-radius: 4px; border-left: 4px solid #10b981;">
-                                    <strong style="color: #065f46;">💡 Why recommended:</strong>
-                                    <p style="margin: 0.25rem 0 0 0; color: #065f46;">
-                                        <?= safe($rec['reason']) ?>
+                    <?php if (empty($displayedRecommendations)): ?>
+                        <div style="text-align: center; padding: 2rem;">
+                            <p>AI is analyzing your profile to recommend courses...</p>
+                        </div>
+                    <?php else: ?>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem;">
+                            <?php foreach ($displayedRecommendations as $rec): ?>
+                                <div class="recommendation-card" style="border: 1px solid #e2e8f0; padding: 1rem; border-radius: 8px; transition: all 0.3s;">
+                                    <h3 style="margin: 0 0 0.5rem 0;">
+                                        <?= safe($rec['course']['course_code']) ?> - <?= safe($rec['course']['course_name']) ?>
+                                    </h3>
+                                    <div style="margin-bottom: 0.75rem;">
+                                        <span class="badge badge-primary"><?= ucfirst($rec['course']['level']) ?></span>
+                                        <span class="badge badge-success"><?= $rec['course']['credits'] ?> credits</span>
+                                        <span class="badge badge-info">AI Match: <?= $rec['score'] ?>%</span>
+                                    </div>
+                                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.75rem;">
+                                        <?= safe($rec['course']['description']) ?>
                                     </p>
+                                    <div style="background: #d1fae5; padding: 0.75rem; border-radius: 4px; border-left: 4px solid #10b981;">
+                                        <strong style="color: #065f46;">AI Reasoning:</strong>
+                                        <p style="margin: 0.25rem 0 0 0; color: #065f46;">
+                                            <?= safe($rec['reason']) ?>
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php if (count($recommendations) > $maxDisplay): ?>
-                        <a href="viewMoreCourses.php<?= $courseId ? '?course_id=' . $courseId : '' ?>" 
-                           class="btn btn-primary" 
-                           style="width: 100%; margin-top: 1rem;">
-                            View All <?= count($recommendations) ?> Recommendations
-                        </a>
+                            <?php endforeach; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
 
         </div>
     </div>
+
+    <script>
+        function regenerateAI(courseId) {
+            console.log('regenerateAI called with courseId:', courseId);
+            
+            if (!courseId || courseId === 0) {
+                alert('Please select a course first.');
+                return false;
+            }
+            
+            if (confirm('Regenerate AI analysis? This will update all insights based on your latest performance.')) {
+                console.log('Redirecting to: recommend.php?course_id=' + courseId + '&regenerate=1');
+                window.location.href = 'recommend.php?course_id=' + courseId + '&regenerate=1';
+            }
+            
+            return false;
+        }
+    </script>
 </body>
 </html>

@@ -13,6 +13,14 @@ $professor = $db->fetchOne(
     [$userId]
 );
 
+// Fallback if no professor profile exists
+if (!$professor) {
+    $professor = $db->fetchOne(
+        "SELECT first_name, last_name, email FROM users WHERE id = ?",
+        [$userId]
+    );
+}
+
 // Get upcoming advising sessions
 $upcomingSessions = $db->fetchAll(
     "SELECT ads.*, u.first_name, u.last_name, sp.major, sp.year_level 
@@ -42,8 +50,7 @@ $stats = $db->fetchOne(
 $highRiskStudents = $db->fetchAll(
     "SELECT DISTINCT u.id, u.first_name, u.last_name, sp.gpa, sp.major, sp.year_level,
             (SELECT COUNT(*) FROM course_grades cg 
-             JOIN course_enrollments ce ON cg.enrollment_id = ce.id 
-             WHERE ce.student_id = u.id AND cg.final_grade < 75) as failed_count
+             WHERE cg.student_id = u.id AND cg.grade IS NOT NULL AND CAST(cg.grade AS DECIMAL) < 75) as failed_count
      FROM advising_sessions ads
      JOIN users u ON ads.student_id = u.id
      JOIN student_profiles sp ON u.id = sp.user_id
@@ -78,9 +85,11 @@ $recentSessions = $db->fetchAll(
         <div class="container">
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
-                <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
-                <li><a href="students.php" class="nav-link">Students</a></li>
+                <li><a href="dashboard_prof.php" class="nav-link">Dashboard</a></li>
+                <li><a href="advisingSessions_prof.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="studentVIew.php" class="nav-link">Students</a></li>
+                <li><a href="../accountProfile.php" class="nav-link">Profile</a></li>
+                <li><a href="../admin/assignCourses.php" class="nav-link">Admin</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>
@@ -131,7 +140,7 @@ $recentSessions = $db->fetchAll(
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
-                    <a href="advisingSessions.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="advisingSessions_prof.php" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
                         View All Sessions
                     </a>
                 <?php endif; ?>
@@ -154,7 +163,7 @@ $recentSessions = $db->fetchAll(
                             <strong>Failed Courses:</strong> <?= $student['failed_count'] ?>
                         </div>
                     <?php endforeach; ?>
-                    <a href="students.php?risk=high" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">
+                    <a href="studentVIew.php?risk=high" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">
                         View All High-Risk Students
                     </a>
                 <?php endif; ?>
@@ -207,10 +216,10 @@ $recentSessions = $db->fetchAll(
                 <h2 class="card-title">Quick Actions</h2>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <a href="advisingSessions.php" class="btn btn-primary">Manage Sessions</a>
-                <a href="students.php" class="btn btn-success">View All Students</a>
-                <a href="reports.php" class="btn btn-secondary">Generate Reports</a>
-                <a href="profile.php" class="btn btn-secondary">Edit Profile</a>
+                <a href="coursesAssignments.php" class="btn btn-primary">My Courses</a>
+                <a href="advisingSessions_prof.php" class="btn btn-primary">Manage Sessions</a>
+                <a href="studentVIew.php" class="btn btn-success">View All Students</a>
+                <a href="../accountProfile.php" class="btn btn-secondary">Edit Profile</a>
             </div>
         </div>
     </div>

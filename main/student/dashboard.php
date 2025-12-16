@@ -80,7 +80,7 @@ $recentSessions = $db->fetchAll(
                 <li><a href="academicProfile.php" class="nav-link">Academic<br>Profile</a></li>
                 <li><a href="advisingSessions.php" class="nav-link">Advising<br>Sessions</a></li>
 
-                <li><a href="accountProfile.php" class="nav-link">Profile</a></li>
+                <li><a href="../accountProfile.php" class="nav-link">Profile</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>

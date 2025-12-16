@@ -10,15 +10,21 @@ if (!$courseId) {
     exit;
 }
 
-// Fetch course info
+// Fetch course info with assigned professor
 $course = $db->fetchOne("
     SELECT c.*, ce.semester, ce.status, cg.school_year,
-           COALESCE(cs.section, sp.current_section) as section
+           COALESCE(cs.section, sp.current_section) as section,
+           u.first_name as prof_first_name, u.last_name as prof_last_name,
+           u.email as prof_email, pca.section as prof_section
     FROM courses c
     JOIN course_enrollments ce ON c.id = ce.course_id
     LEFT JOIN course_grades cg ON ce.student_id = cg.student_id AND ce.course_id = cg.course_id
     LEFT JOIN course_sections cs ON cs.student_id = ce.student_id AND cs.course_id = c.id
     LEFT JOIN student_profiles sp ON ce.student_id = sp.user_id
+    LEFT JOIN professor_course_assignments pca ON c.id = pca.course_id 
+        AND COALESCE(cs.section, sp.current_section) = pca.section
+    LEFT JOIN professor_profiles pp ON pca.professor_id = pp.user_id
+    LEFT JOIN users u ON pp.user_id = u.id
     WHERE c.id = ? AND ce.student_id = ?
 ", [$courseId, $userId]);
 
@@ -34,6 +40,13 @@ $syllabus = $db->fetchOne("
     ORDER BY uploaded_at DESC 
     LIMIT 1
 ", [$courseId]);
+
+// Validate syllabus record and file existence
+$hasSyllabus = false;
+if ($syllabus && !empty($syllabus['file_path'])) {
+    $fileOnDisk = realpath(__DIR__ . '/../../' . ltrim($syllabus['file_path'], '/'));
+    $hasSyllabus = $fileOnDisk && file_exists($fileOnDisk);
+}
 
 // Fetch grade components grouped by period
 $gradeComponents = $db->fetchAll("
@@ -109,6 +122,16 @@ function safe($value, $fallback = 'N/A')
                 Semester: <?= safe($course['semester']) ?> |
                 Year: <?= safe($course['school_year']) ?>
             </p>
+            <?php if (!empty($course['prof_first_name'])): ?>
+                <p style="margin: 0.5rem 0 0 0; color: #059669; font-weight: 500;">
+                    👨‍🏫 Professor: <?= safe($course['prof_first_name'] . ' ' . $course['prof_last_name']) ?>
+                    <?php if (!empty($course['prof_email'])): ?>
+                        <span style="color: #666; font-weight: normal; font-size: 0.9rem;">
+                            (<?= safe($course['prof_email']) ?>)
+                        </span>
+                    <?php endif; ?>
+                </p>
+            <?php endif; ?>
         </div>
         <button onclick="window.print()" class="btn btn-secondary no-print">
             Print Records
@@ -119,7 +142,7 @@ function safe($value, $fallback = 'N/A')
     <div style="background: #f8fafc; padding: 1.5rem; border-bottom: 1px solid #e2e8f0;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="margin: 0;">Course Syllabus</h3>
-            <?php if ($syllabus): ?>
+            <?php if ($hasSyllabus): ?>
                 <div style="display: flex; gap: 0.5rem;">
                     <a href="<?= safe($syllabus['file_path']) ?>" target="_blank" class="btn btn-sm btn-success">
                         View/Download Syllabus
@@ -135,7 +158,7 @@ function safe($value, $fallback = 'N/A')
             <?php endif; ?>
         </div>
 
-        <?php if ($syllabus): ?>
+        <?php if ($hasSyllabus): ?>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
                 <div>
                     <strong>Uploaded:</strong> <?= date('M d, Y', strtotime($syllabus['uploaded_at'])) ?>
@@ -148,7 +171,7 @@ function safe($value, $fallback = 'N/A')
                 <?php endif; ?>
             </div>
 
-            <?php if ($syllabus['grading_breakdown']): ?>
+            <?php if ($hasSyllabus && $syllabus['grading_breakdown']): ?>
                 <details style="margin-top: 1rem;">
                     <summary style="cursor: pointer; font-weight: bold; color: var(--primary-color);">
                         View Grading Breakdown
@@ -156,6 +179,15 @@ function safe($value, $fallback = 'N/A')
                     <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 4px;">
                         <?php
                         $breakdown = json_decode($syllabus['grading_breakdown'], true);
+                        // Edited: To sort periods in correct order since it displays finals first after dropdown.
+                        $periodOrder = ['prelim', 'midterm', 'semi_final', 'final'];
+                        $sorted = [];
+                        foreach ($periodOrder as $period) {
+                            if (isset($breakdown[$period])) {
+                                $sorted[$period] = $breakdown[$period];
+                            }
+                        }
+                        $breakdown = $sorted;
                         foreach ($breakdown as $period => $weights):
                         ?>
                             <div style="margin-bottom: 1rem;">
@@ -169,6 +201,42 @@ function safe($value, $fallback = 'N/A')
                                         </span>
                                     <?php endforeach; ?>
                                 </div>
+                                        <script>
+                                        document.addEventListener("click", function (e) {
+                                            const editBtn = e.target.closest(".edit-btn");
+                                            if (editBtn) {
+                                                const id = editBtn.dataset.id;
+                                                if (id) {
+                                                    window.location.href = "editGradeComp.php?id=" + encodeURIComponent(id);
+                                                }
+                                                return;
+                                            }
+
+                                            const deleteBtn = e.target.closest(".delete-btn");
+                                            if (deleteBtn) {
+                                                const id = deleteBtn.dataset.id;
+                                                if (!id) return;
+                                                if (!confirm("Delete this record?")) return;
+                                                fetch("deleteGradeComp.php", {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ id })
+                                                })
+                                                .then(r => r.json())
+                                                .then(res => {
+                                                    if (res.success) {
+                                                        location.reload();
+                                                    } else {
+                                                        alert(res.message || "Delete failed");
+                                                    }
+                                                })
+                                                .catch(err => {
+                                                    console.error(err);
+                                                    alert("Delete error");
+                                                });
+                                            }
+                                        });
+                                        </script>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -240,6 +308,7 @@ function safe($value, $fallback = 'N/A')
                                 </span>
                             </div>
 
+                            <div class="table-responsive">
                             <table class="table" style="margin-bottom: 0;">
                                 <thead>
                                     <tr style="background: #f8fafc;">
@@ -249,7 +318,7 @@ function safe($value, $fallback = 'N/A')
                                         <th style="text-align: center;">%</th>
                                         <th style="text-align: center;">Weight</th>
                                         <th>Date</th>
-                                        <th class="no-print" style="text-align: center;">Actions</th>
+                                        <th class="no-print" style="text-align: center;">Modify Record</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -285,12 +354,12 @@ function safe($value, $fallback = 'N/A')
                                                 <?= date('M d, Y', strtotime($comp['date_recorded'])) ?>
                                             </td>
                                             <td class="no-print" style="text-align: center;">
-                                                <button onclick="editComponent('<?= $comp['id'] ?>')"
+                                                <button onclick="editComponent(<?= $comp['id'] ?>)"
                                                     class="btn btn-sm btn-primary"
                                                     style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
                                                     Edit
                                                 </button>
-                                                <button onclick="deleteComponent('<?= $comp['id'] ?>, <?= $courseId ?>')"
+                                                <button onclick="deleteComponent(<?= $comp['id'] ?>, <?= $courseId ?>)"
                                                     class="btn btn-sm btn-danger"
                                                     style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
                                                     Delete
@@ -300,6 +369,7 @@ function safe($value, $fallback = 'N/A')
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -318,54 +388,3 @@ function safe($value, $fallback = 'N/A')
     </div>
 </div>
 
-<script>
-    function addComponent(period, courseId) {
-        console.log("Redirecting with:", period, courseId); // Debugging line
-        window.location.href = `addGradeComponent.php?course_id=${courseId}&period=${period}`;
-    }
-
-    function editComponent(componentId) {
-        if (!componentId) {
-            console.error("No ID provided to editComponent");
-            return;
-        }
-        window.location.href = `editGradeComponent.php?id=${componentId}`;
-    }
-
-    function deleteComponent(componentId, courseId) {
-        if (confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
-            fetch(`deleteGradeComponent.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: componentId,
-                        course_id: courseId
-                    }) // Include courseId if needed
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    } else {
-                        alert('Failed to delete: ' + (data.message || 'Unknown error'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Delete error:', error);
-                    alert('Error deleting record. Please try again.');
-                });
-        }
-    }
-
-    function uploadSyllabus(courseId) {
-        window.location.href = `uploadSyllabus.php?course_id=${courseId}`;
-    }
-
-    function replaceSyllabus(courseId) {
-        if (confirm('Replace the existing syllabus? The old syllabus will be archived.')) {
-            window.location.href = `uploadSyllabus.php?course_id=${courseId}&replace=1`;
-        }
-    }
-</script>

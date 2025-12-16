@@ -8,7 +8,7 @@ if ($auth->isLoggedIn()) {
             redirect(APP_URL . '/main/student/dashboard.php');
             break;
         case 'professor':
-            redirect(APP_URL . '/main/professor/dashboard.php');
+            redirect(APP_URL . '/main/professor/dashboard_prof.php');
             break;
         case 'admin':
             redirect(APP_URL . '/main/admin/dashboard.php');

@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // Get professor's advising sessions
 $sessions = $db->fetchAll(
-    "SELECT ads.*, u.first_name, u.last_name, u.email, sp.major, sp.year_level, sp.gpa 
+    "SELECT ads.*, u.first_name, u.last_name, u.email, sp.major, sp.enrollment_year, sp.gpa 
      FROM advising_sessions ads 
      JOIN users u ON ads.student_id = u.id 
      LEFT JOIN student_profiles sp ON u.id = sp.user_id 
@@ -125,9 +125,9 @@ $stats = $db->fetchOne(
         <div class="container">
             <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
             <ul class="navbar-nav">
-                <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
-                <li><a href="students.php" class="nav-link">Students</a></li>
+                <li><a href="dashboard_prof.php" class="nav-link">Dashboard</a></li>
+                <li><a href="advisingSessions_prof.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="studentVIew.php" class="nav-link">Students</a></li>
                 <li><a href="../logout.php" class="nav-link">Logout</a></li>
             </ul>
         </div>
@@ -184,7 +184,7 @@ $stats = $db->fetchOne(
                             </p>
                             <p style="margin-bottom: 0.3rem;">
                                 <strong>Major:</strong> <?= htmlspecialchars($session['major'] ?? 'N/A') ?> | 
-                                <strong>Year:</strong> <?= htmlspecialchars($session['year_level'] ?? 'N/A') ?> | 
+                                <strong>Enrolled:</strong> <?= htmlspecialchars($session['enrollment_year'] ?? 'N/A') ?> | 
                                 <strong>GPA:</strong> <?= formatGPA($session['gpa']) ?>
                             </p>
                         </div>

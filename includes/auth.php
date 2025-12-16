@@ -51,6 +51,23 @@ class Auth {
                 $email, $passwordHash, $role, $firstName, $lastName, $verificationToken
             ]);
             
+            // Create profile based on role
+            if ($role === 'student') {
+                // Generate unique student ID
+                $studentId = 'STU' . str_pad($userId, 6, '0', STR_PAD_LEFT);
+                $this->db->insert(
+                    "INSERT INTO student_profiles (user_id, student_id, major, gpa, credits_completed) VALUES (?, ?, '', 0.00, 0)",
+                    [$userId, $studentId]
+                );
+            } elseif ($role === 'professor') {
+                // Generate unique employee ID
+                $employeeId = 'PROF' . str_pad($userId, 6, '0', STR_PAD_LEFT);
+                $this->db->insert(
+                    "INSERT INTO professor_profiles (user_id, employee_id, department, specialization) VALUES (?, ?, '', '')",
+                    [$userId, $employeeId]
+                );
+            }
+            
             // Send verification email (implement email sending)
             // $this->sendVerificationEmail($email, $verificationToken);
             
