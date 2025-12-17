@@ -7,7 +7,7 @@ $componentId = $_GET['id'] ?? null;
 
 if (!$componentId) {
     $_SESSION['error'] = 'No component ID provided.';
-    header('Location: viewGrades.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -22,13 +22,13 @@ $component = $db->fetchOne("
 
 if (!$component) {
     $_SESSION['error'] = 'Component not found.';
-    header('Location: viewGrades.php');
+    header('Location: dashboard.php');
     exit;
 }
 
 if ($component['student_id'] != $userId) {
     $_SESSION['error'] = 'Unauthorized access.';
-    header('Location: viewGrades.php');
+    header('Location: academicProfile.php?course_id=' . $component['course_id']);
     exit;
 }
 
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ", [$componentName, $score, $maxScore, $weight, $dateRecorded, $notes, $componentId]);
 
             $_SESSION['success'] = 'Grade component updated successfully!';
-            header('Location: viewCourseDetails.php?course_id=' . $component['course_id']);
+            header('Location: academicProfile.php?course_id=' . $component['course_id']);
             exit;
         } catch (Exception $e) {
             $errors[] = 'Failed to update component: ' . $e->getMessage();
@@ -201,7 +201,7 @@ include __DIR__ . '/../../includes/header.php';
                 </div>
 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                    <a href="viewCourseDetails.php?course_id=<?= $component['course_id'] ?>" 
+                    <a href="academicProfile.php?course_id=<?= $component['course_id'] ?>" 
                        class="btn btn-secondary">
                         Cancel
                     </a>

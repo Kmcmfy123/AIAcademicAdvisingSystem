@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($mailSent) {
                     $success .= " Email sent successfully!";
                 } else {
-                    $error = "Failed to send welcome email.";
+                    $error = "Email registered.";
                 }
 
             } else {

@@ -109,7 +109,7 @@ function getGradeClass($grade) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= safe($student['first_name'] . ' ' . $student['last_name']) ?> - Profile</title>
-    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .modal {
             display: none;
@@ -415,6 +415,52 @@ function getGradeClass($grade) {
                     console.error('Error loading grades:', error);
                 });
         }
+
+        function addGradeComponent(courseId, studentId) {
+            window.location.href = `addGradeComponent.php?course_id=${courseId}&student_id=${studentId}`;
+        }
+
+        function uploadSyllabus(courseId, studentId) {
+            window.location.href = `uploadSyllabus.php?course_id=${courseId}&student_id=${studentId}`;
+        }
+
+        document.addEventListener("click", function (e) {
+            const editBtn = e.target.closest(".edit-btn");
+            if (editBtn) {
+                const id = editBtn.dataset.id;
+                const studentId = editBtn.dataset.student;
+                if (id && studentId) {
+                    window.location.href = `editGradeComp.php?id=${id}&student_id=${studentId}`;
+                }
+                return;
+            }
+
+            const deleteBtn = e.target.closest(".delete-btn");
+            if (deleteBtn) {
+                const id = deleteBtn.dataset.id;
+                const studentId = deleteBtn.dataset.student;
+                if (!id || !studentId) return;
+                if (!confirm("Delete this grade component?")) return;
+                
+                fetch("deleteGradeComp.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, student_id: studentId })
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.message || "Delete failed");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Delete error");
+                });
+            }
+        });
     </script>
 </body>
 </html>

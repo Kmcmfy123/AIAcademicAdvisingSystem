@@ -3,10 +3,10 @@
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'advising_system');
 define('DB_USER', 'root');
-define('DB_PASS', 'password_123');
+define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
-define('APP_NAME', 'Academic Advising System');
+define('APP_NAME', 'AID-Visor');
 define('APP_URL', 'http://localhost/AIAcademicAdvisingSystem');
 define('BASE_PATH', __DIR__ . '/../');
 define('PUBLIC_PATH', BASE_PATH . 'main/');

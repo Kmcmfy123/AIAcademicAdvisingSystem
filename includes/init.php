@@ -18,9 +18,13 @@ function loadEnv($filePath) {
             continue;
         }
         
-        [$name, $value] = explode('=', $line, 2);
-        $name = trim($name);
-        $value = trim($value);
+        $parts = explode('=', $line, 2);
+        if (count($parts) < 2) {
+            continue;
+        }
+        
+        $name = trim($parts[0]);
+        $value = trim($parts[1]);
         
         putenv("$name=$value");
         $_ENV[$name] = $value;

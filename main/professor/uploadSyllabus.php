@@ -126,7 +126,7 @@ function safe($value) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Upload Syllabus - <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .period-section {
             border: 1px solid #e2e8f0;

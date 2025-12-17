@@ -7,7 +7,7 @@ ini_set('display_errors', 1);
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'advising_system');
 define('DB_USER', 'root');
-define('DB_PASS', 'password_123');
+define('DB_PASS', '');
 
 try {
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="setup-container">
         <div class="setup-header">
-            <h1>🔐 Admin Setup</h1>
+            <h1>Admin Setup</h1>
             <p>Create your first admin account</p>
         </div>
 

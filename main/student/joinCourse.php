@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'INSERT INTO course_enrollments (student_id, course_id, semester, school_year, status) VALUES (?, ?, ?, ?, ?)',
                             [$userId, $courseId, $semester, $schoolYear, 'enrolled']
                         );
-                    }
+                    }   
 
                     // Upsert section mapping for this student+course
                     // course_sections(student_id, course_id, section)
