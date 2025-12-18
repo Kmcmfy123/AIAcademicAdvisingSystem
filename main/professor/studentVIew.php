@@ -63,7 +63,7 @@ $riskSummary = $db->fetchOne(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Student Management - <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .student-card {
             border: 1px solid #e5e7eb;

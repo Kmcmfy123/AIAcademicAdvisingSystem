@@ -278,6 +278,41 @@ function loadCourseDetails(courseId) {
         });
 }
 
+document.addEventListener("click", function (e) {
+    const editBtn = e.target.closest(".edit-btn");
+    if (editBtn) {
+        const id = editBtn.dataset.id;
+        if (id) {
+            window.location.href = "editGradeComp.php?id=" + encodeURIComponent(id);
+        }
+        return;
+    }
+
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+        const id = deleteBtn.dataset.id;
+        if (!id) return;
+        if (!confirm("Delete this record?")) return;
+        fetch("deleteGradeComp.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                location.reload();
+            } else {
+                alert(res.message || "Delete failed");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Delete error");
+        });
+    }
+});
+
 <?php if ($selectedCourseId): ?>
 // Load course details on page load
 window.addEventListener('DOMContentLoaded', () => {

@@ -109,6 +109,13 @@ function safe($value, $fallback = 'N/A')
 {
     return htmlspecialchars($value ?? $fallback);
 }
+
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+if (!$isAjax) {
+    $pageTitle = 'Course Details';
+    include __DIR__ . '/../../includes/header.php';
+}
 ?>
 
 <div class="card">
@@ -124,7 +131,7 @@ function safe($value, $fallback = 'N/A')
             </p>
             <?php if (!empty($course['prof_first_name'])): ?>
                 <p style="margin: 0.5rem 0 0 0; color: #059669; font-weight: 500;">
-                    👨‍🏫 Professor: <?= safe($course['prof_first_name'] . ' ' . $course['prof_last_name']) ?>
+                    Professor: <?= safe($course['prof_first_name'] . ' ' . $course['prof_last_name']) ?>
                     <?php if (!empty($course['prof_email'])): ?>
                         <span style="color: #666; font-weight: normal; font-size: 0.9rem;">
                             (<?= safe($course['prof_email']) ?>)
@@ -201,42 +208,6 @@ function safe($value, $fallback = 'N/A')
                                         </span>
                                     <?php endforeach; ?>
                                 </div>
-                                        <script>
-                                        document.addEventListener("click", function (e) {
-                                            const editBtn = e.target.closest(".edit-btn");
-                                            if (editBtn) {
-                                                const id = editBtn.dataset.id;
-                                                if (id) {
-                                                    window.location.href = "editGradeComp.php?id=" + encodeURIComponent(id);
-                                                }
-                                                return;
-                                            }
-
-                                            const deleteBtn = e.target.closest(".delete-btn");
-                                            if (deleteBtn) {
-                                                const id = deleteBtn.dataset.id;
-                                                if (!id) return;
-                                                if (!confirm("Delete this record?")) return;
-                                                fetch("deleteGradeComp.php", {
-                                                    method: "POST",
-                                                    headers: { "Content-Type": "application/json" },
-                                                    body: JSON.stringify({ id })
-                                                })
-                                                .then(r => r.json())
-                                                .then(res => {
-                                                    if (res.success) {
-                                                        location.reload();
-                                                    } else {
-                                                        alert(res.message || "Delete failed");
-                                                    }
-                                                })
-                                                .catch(err => {
-                                                    console.error(err);
-                                                    alert("Delete error");
-                                                });
-                                            }
-                                        });
-                                        </script>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -293,8 +264,6 @@ function safe($value, $fallback = 'N/A')
                         <div style="margin-bottom: 1.5rem;">
                             <div style="background: #f8fafc; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.5rem;">
                                 <strong style="text-transform: capitalize; color: #374151;">
-                                    <?php
-                                    ?>
                                     <?= str_replace('_', ' ', $type) ?>
                                 </strong>
                                 <?php
@@ -353,18 +322,18 @@ function safe($value, $fallback = 'N/A')
                                             <td style="font-size: 0.85rem; color: #666;">
                                                 <?= date('M d, Y', strtotime($comp['date_recorded'])) ?>
                                             </td>
-                                            <td class="no-print" style="text-align: center;">
-                                                <button onclick="editComponent(<?= $comp['id'] ?>)"
-                                                    class="btn btn-sm btn-primary"
-                                                    style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
-                                                    Edit
-                                                </button>
-                                                <button onclick="deleteComponent(<?= $comp['id'] ?>, <?= $courseId ?>)"
-                                                    class="btn btn-sm btn-danger"
-                                                    style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
+<td class="no-print" style="text-align: center;">
+<a href="editGradeComp.php?id=<?= $comp['id'] ?>" 
+   class="btn btn-sm btn-primary" 
+   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; display: inline-block; text-decoration: none;">
+    Edit
+</a>
+                                                <a href="#" onclick="if(confirm('Delete this record?')) { deleteComponent(<?= $comp['id'] ?>, <?= $courseId ?>); return false; }"
+                                                   class="btn btn-sm btn-danger"
+                                                   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; display: inline-block; text-decoration: none;">
                                                     Delete
-                                                </button>
-                                            </td>
+                                                </a>
+</td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -387,4 +356,6 @@ function safe($value, $fallback = 'N/A')
 
     </div>
 </div>
+
+<?php if (!$isAjax) { include __DIR__ . '/../../includes/footer.php'; } ?>
 

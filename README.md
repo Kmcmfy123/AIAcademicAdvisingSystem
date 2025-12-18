@@ -112,7 +112,7 @@ CREATE TABLE course_grades (
 
     FOREIGN KEY (student_id) REFERENCES users(id),
     FOREIGN KEY (course_id) REFERENCES courses(id)
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS grade_components (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -205,6 +205,7 @@ CREATE TABLE course_enrollments (
     student_id INT NOT NULL,
     course_id INT NOT NULL,
     semester VARCHAR(20) NOT NULL, -- e.g., "Fall 2024"
+    school_year VARCHAR(20), -- e.g., "2024-2025"
     grade VARCHAR(5), -- A, B+, C, etc.
     status ENUM('enrolled', 'completed', 'dropped', 'failed') DEFAULT 'enrolled',
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -431,7 +432,7 @@ INSERT INTO course_enrollments (student_id, course_id, semester, grade, status) 
 (4, 1, 'Fall 2022', 'A', 'completed'),
 (4, 9, 'Fall 2022', 'B+', 'completed'),
 (4, 2, 'Spring 2023', 'A-', 'completed'),
-(4, 3, 'Spring 2023', 'B', 'completed'),
+(4, 3, 'Spring  2023', 'B', 'completed'),
 (4, 10, 'Spring 2023', 'A', 'completed'),
 (4, 4, 'Fall 2023', 'A', 'completed'),
 (4, 11, 'Fall 2023', 'B+', 'completed'),

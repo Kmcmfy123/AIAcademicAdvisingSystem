@@ -113,9 +113,35 @@ function safe($value, $fallback = 'N/A')
 {
     return htmlspecialchars($value ?? $fallback);
 }
+
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+if (!$isAjax) {
 ?>
 
-<div class="card">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Course Details - <?= APP_NAME ?></title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
+            <ul class="navbar-nav">
+                <li><a href="dashboard_prof.php" class="nav-link">Dashboard</a></li>
+                <li><a href="advisingSessions_prof.php" class="nav-link">Advising Sessions</a></li>
+                <li><a href="studentVIew.php" class="nav-link">Students</a></li>
+                <li><a href="../accountProfile.php" class="nav-link">Profile</a></li>
+                <li><a href="../logout.php" class="nav-link">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 class="card-title" style="margin: 0;">
@@ -301,17 +327,17 @@ function safe($value, $fallback = 'N/A')
                                                 </span>
                                             </td>
                                             <td style="text-align: center;" class="no-print">
-                                                <button class="btn-icon edit-btn" 
+                                                <button class="btn btn-sm btn-primary edit-btn" 
                                                         data-id="<?= $item['id'] ?>"
                                                         data-student="<?= $studentId ?>"
                                                         title="Edit">
-                                                    ✏️
+                                                    Edit
                                                 </button>
-                                                <button class="btn-icon delete-btn" 
+                                                <button class="btn btn-sm btn-danger delete-btn" 
                                                         data-id="<?= $item['id'] ?>"
                                                         data-student="<?= $studentId ?>"
                                                         title="Delete">
-                                                    🗑️
+                                                    Delete
                                                 </button>
                                             </td>
                                         </tr>
@@ -326,50 +352,9 @@ function safe($value, $fallback = 'N/A')
     </div>
 </div>
 
-<script>
-function addGradeComponent(courseId, studentId) {
-    window.location.href = `addGradeComponent.php?course_id=${courseId}&student_id=${studentId}`;
-}
+<?php } ?>
 
-function uploadSyllabus(courseId, studentId) {
-    window.location.href = `uploadSyllabus.php?course_id=${courseId}&student_id=${studentId}`;
-}
-
-document.addEventListener("click", function (e) {
-    const editBtn = e.target.closest(".edit-btn");
-    if (editBtn) {
-        const id = editBtn.dataset.id;
-        const studentId = editBtn.dataset.student;
-        if (id && studentId) {
-            window.location.href = `editGradeComp.php?id=${id}&student_id=${studentId}`;
-        }
-        return;
-    }
-
-    const deleteBtn = e.target.closest(".delete-btn");
-    if (deleteBtn) {
-        const id = deleteBtn.dataset.id;
-        const studentId = deleteBtn.dataset.student;
-        if (!id || !studentId) return;
-        if (!confirm("Delete this grade component?")) return;
-        
-        fetch("deleteGradeComp.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, student_id: studentId })
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                location.reload();
-            } else {
-                alert(res.message || "Delete failed");
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Delete error");
-        });
-    }
-});
-</script>
+<?php if (!$isAjax) { ?>
+</body>
+</html>
+<?php } ?>

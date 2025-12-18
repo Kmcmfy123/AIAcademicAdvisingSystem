@@ -82,7 +82,7 @@ $stats = $db->fetchOne(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Advising Sessions - <?= APP_NAME ?></title>
-    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .session-card {
             border-left: 4px solid var(--primary-color);
