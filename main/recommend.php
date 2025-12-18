@@ -224,8 +224,8 @@ function safe($value, $fallback = 'N/A') {
                     <h1 class="card-title" style="margin: 0;">
                         <?= $hasCourse
                             ? safe($selectedCourse['course_code'] ?? 'Course') . ': Recommendations & Insights'
-                            : 'AI-Powered Recommendations & Insights' ?>
-                        <span class="ai-badge"><?= $hasCourse ? 'AI-Based' : 'AI Analysis' ?></span>
+                            : 'AI-Assisted Recommendations & Insights' ?>
+                        <span class="ai-badge"><?= $hasCourse ? 'AI-Assisted' : 'AI Analysis' ?></span>
                     </h1>
                     <?php if ($hasCourse): ?>
                         <p style="margin: 0.5rem 0 0 0; color: #666;">
@@ -240,7 +240,7 @@ function safe($value, $fallback = 'N/A') {
                         class="regenerate-btn"
                         <?= $hasCourse ? '' : 'disabled title="Select a course to regenerate"' ?>
                     >
-                        Regenerate AI Analysis
+                        Refresh & Regenerate
                     </button>
                     <a href="student/academicProfile.php<?= $hasCourse ? '?course_id=' . urlencode((string) $courseId) : '' ?>" class="btn btn-secondary">
                         Back to Profile
@@ -255,16 +255,16 @@ function safe($value, $fallback = 'N/A') {
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">
-                        AI Insights & Recommendations
-                        <span class="ai-badge">AI</span>
+                        Insights & Recommendations
+                        <span class="ai-badge">AI-Assisted</span>
                     </h2>
                 </div>
                 <div class="card-content">
                     <?php if (empty($insights)): ?>
                         <div style="text-align: center; padding: 2rem; background: #f9fafb; border-radius: 8px;">
-                            <p>Generating AI insights...</p>
+                            <p>Generating insights...</p>
                             <p style="font-size: 0.9rem; color: #666;">
-                                AI is analyzing your performance. Refresh in a moment.
+                                Analyzing your performance. Refresh in a moment.
                             </p>
                         </div>
                     <?php else: ?>
@@ -281,11 +281,35 @@ function safe($value, $fallback = 'N/A') {
                                     <?php endif; ?>
                                 </div>
                                 <p style="margin: 0.5rem 0 0 0;">
-                                    <?= safe($insight['insight_text']) ?>
+                                    <?php 
+                                    // Extract source tag from insight text
+                                    $text = $insight['insight_text'];
+                                    $source = 'Unknown';
+                                    $sourceBadgeClass = '';
+                                    
+                                    if (preg_match('/\[source: ([^\]]+)\]/', $text, $matches)) {
+                                        $source = $matches[1];
+                                        $text = preg_replace('/\s*\[source: [^\]]+\]$/', '', $text); // Remove tag from display
+                                        
+                                        // Set badge styling based on source
+                                        if (strpos($source, 'AI-') === 0) {
+                                            $sourceBadgeClass = 'badge-ai';
+                                        } else if ($source === 'RULE') {
+                                            $sourceBadgeClass = 'badge-rule';
+                                        }
+                                    }
+                                    
+                                    echo safe($text);
+                                    ?>
                                 </p>
-                                <small style="color: #666;">
-                                    Generated: <?= date('M d, Y g:i A', strtotime($insight['generated_at'])) ?>
-                                </small>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                    <small style="color: #666;">
+                                        Generated: <?= date('M d, Y g:i A', strtotime($insight['generated_at'])) ?>
+                                    </small>
+                                    <span class="source-badge <?= $sourceBadgeClass ?>">
+                                        <?= $source ?>
+                                    </span>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -398,7 +422,7 @@ function safe($value, $fallback = 'N/A') {
             <div class="card full-width-section">
                 <div class="card-header">
                     <h2 class="card-title">
-                        AI-Recommended Courses for Next Semester
+                        AI-Assisted Recommended Courses for Next Semester
                         <span class="ai-badge">AI</span>
                     </h2>
                 </div>
@@ -423,7 +447,7 @@ function safe($value, $fallback = 'N/A') {
                                         <?= safe($rec['course']['description']) ?>
                                     </p>
                                     <div style="background: #d1fae5; padding: 0.75rem; border-radius: 4px; border-left: 4px solid #10b981;">
-                                        <strong style="color: #065f46;">AI Reasoning:</strong>
+                                        <strong style="color: #065f46;">Why?(AI-Based Reasons):</strong>
                                         <p style="margin: 0.25rem 0 0 0; color: #065f46;">
                                             <?= safe($rec['reason']) ?>
                                         </p>

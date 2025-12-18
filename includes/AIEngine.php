@@ -122,6 +122,12 @@ Return ONLY the JSON, no markdown, no explanations.";
         $cleanJson = $this->cleanJsonResponse($aiResponse);
         $insights = json_decode($cleanJson, true);
         
+        // Tag with AI source if successful
+        if ($insights && is_array($insights)) {
+            $insights['_source'] = 'ai';
+            $insights['_provider'] = $this->provider;
+        }
+        
         if (!$insights) {
             // Fallback to rule-based analysis
             $insights = $this->createRuleBasedInsights($performanceSummary, $syllabus);
@@ -302,7 +308,7 @@ private function callGemini($prompt, $systemPrompt = '') {
      */
 private function callGroq($prompt, $systemPrompt) {
     $data = [
-        'model' => 'llama-3.1-70b-versatile',
+        'model' => 'llama-3.3-70b-versatile',
         'messages' => [
             ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $prompt]
@@ -468,7 +474,9 @@ Return ONLY JSON, no markdown.";
                 'Attend professor office hours',
                 'Form study groups with classmates'
             ],
-            'weak_topics' => []
+            'weak_topics' => [],
+            '_source' => 'rule',
+            '_provider' => null
         ];
     }
     
@@ -577,6 +585,11 @@ Return ONLY JSON, no markdown.";
     }
     
     private function saveInsights($studentId, $courseId, $insights) {
+        // Determine source label for the insight text
+        $sourceLabel = (($insights['_source'] ?? 'ai') === 'ai')
+            ? 'AI-' . strtoupper($insights['_provider'] ?? 'UNKNOWN')
+            : 'RULE';
+
         $this->db->query("
             INSERT INTO ai_insights 
             (student_id, course_id, insight_type, insight_text, confidence_score, generated_at)
@@ -585,7 +598,7 @@ Return ONLY JSON, no markdown.";
             $studentId,
             $courseId,
             'performance_trend',
-            $insights['analysis'] ?? 'Analysis generated',
+            ($insights['analysis'] ?? 'Analysis generated') . " [source: {$sourceLabel}]",
             0.85
         ]);
         
@@ -599,7 +612,7 @@ Return ONLY JSON, no markdown.";
                 $studentId,
                 $courseId,
                 'risk_alert',
-                $insights['risk_reasoning'] ?? 'Performance below expectations',
+                ($insights['risk_reasoning'] ?? 'Performance below expectations') . " [source: {$sourceLabel}]",
                 0.90
             ]);
         }

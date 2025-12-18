@@ -239,7 +239,7 @@ function safe($value, $fallback = 'N/A') {
             <a href="../recommend.php<?= $selectedCourseId ? '?course_id=' . $selectedCourseId : '' ?>" 
                class="btn btn-success" 
                style="width: 100%;">
-                <?= $selectedCourseId ? 'View AI Recommendations for Selected Course' : 'View All AI Recommendations' ?> →
+                <?= $selectedCourseId ? 'View AI Recommendations for Selected Course' : 'View All AI Recommendations' ?>...
             </a>
         </div>
     </div>

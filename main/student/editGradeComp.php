@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Edit Grade Component';
-include __DIR__ . '/../../includes/header.php';
+// include __DIR__ . '/../../includes/header.php';
 ?>
 
 <div class="container" style="max-width: 800px; margin: 2rem auto;">

@@ -343,7 +343,26 @@ body {
 
 /*To add: Let the card of sample course be aligned at left */
 
+/* AI Source Badges */
+.source-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
+.badge-ai {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.badge-rule {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
 
 /* Print Styles */
 @media print {

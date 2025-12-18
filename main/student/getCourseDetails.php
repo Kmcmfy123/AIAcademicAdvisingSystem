@@ -114,7 +114,7 @@ $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_
 
 if (!$isAjax) {
     $pageTitle = 'Course Details';
-    include __DIR__ . '/../../includes/header.php';
+    // include __DIR__ . '/../../includes/header.php';
 }
 ?>
 
@@ -323,16 +323,16 @@ if (!$isAjax) {
                                                 <?= date('M d, Y', strtotime($comp['date_recorded'])) ?>
                                             </td>
 <td class="no-print" style="text-align: center;">
-<a href="editGradeComp.php?id=<?= $comp['id'] ?>" 
-   class="btn btn-sm btn-primary" 
-   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; display: inline-block; text-decoration: none;">
+<button class="btn btn-sm btn-primary edit-btn" 
+        data-id="<?= $comp['id'] ?>"
+        style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
     Edit
-</a>
-                                                <a href="#" onclick="if(confirm('Delete this record?')) { deleteComponent(<?= $comp['id'] ?>, <?= $courseId ?>); return false; }"
-                                                   class="btn btn-sm btn-danger"
-                                                   style="padding: 0.25rem 0.5rem; font-size: 0.85rem; display: inline-block; text-decoration: none;">
-                                                    Delete
-                                                </a>
+</button>
+<button class="btn btn-sm btn-danger delete-btn"
+        data-id="<?= $comp['id'] ?>"
+        style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
+    Delete
+</button>
 </td>
                                         </tr>
                                     <?php endforeach; ?>
