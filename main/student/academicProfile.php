@@ -237,9 +237,10 @@ function safe($value, $fallback = 'N/A') {
                 View personalized course recommendations, learning resources, professor insights, and performance analysis.
             </p>
             <a href="../recommend.php<?= $selectedCourseId ? '?course_id=' . $selectedCourseId : '' ?>" 
+               id="recommend-link"
                class="btn btn-success" 
                style="width: 100%;">
-                <?= $selectedCourseId ? 'View AI Recommendations for Selected Course' : 'View All AI Recommendations' ?>...
+                <span id="recommend-text"><?= $selectedCourseId ? 'View AI Recommendations for Selected Course' : 'View All AI Recommendations' ?></span>
             </a>
         </div>
     </div>
@@ -261,6 +262,9 @@ function selectCourse(courseId) {
         card.classList.remove('selected');
     });
     event.currentTarget.classList.add('selected');
+    
+    // Update recommendation link and text
+    updateRecommendationLink(courseId);
 }
 
 function loadCourseDetails(courseId) {
@@ -276,6 +280,19 @@ function loadCourseDetails(courseId) {
         .catch(error => {
             container.innerHTML = '<div class="card"><p style="color: red;">Failed to load course details.</p></div>';
         });
+}
+
+function updateRecommendationLink(courseId) {
+    const link = document.getElementById('recommend-link');
+    const text = document.getElementById('recommend-text');
+    
+    if (courseId) {
+        link.href = `../recommend.php?course_id=${courseId}`;
+        text.textContent = 'View AI Recommendations for Selected Course';
+    } else {
+        link.href = '../recommend.php';
+        text.textContent = 'View All AI Recommendations';
+    }
 }
 
 document.addEventListener("click", function (e) {

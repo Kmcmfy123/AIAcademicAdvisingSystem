@@ -83,9 +83,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
 $pageTitle = 'Edit Grade Component';
-// include __DIR__ . '/../../includes/header.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= $pageTitle ?> - <?= APP_NAME ?></title>
+    <link rel="stylesheet" href="<?= ASSETS_URL ?>/css/style.css">
+</head>
+<body>s
+
+<nav class="navbar">
+    <div class="container">
+        <a href="#" class="navbar-brand"><?= APP_NAME ?></a>
+        <ul class="navbar-nav">
+            <li><a href="dashboard.php" class="nav-link">Dashboard</a></li>
+            <li><a href="academicProfile.php" class="nav-link">Academic Profile</a></li>
+            <li><a href="advisingSessions.php" class="nav-link">Advising Sessions</a></li>
+            <li><a href="../logout.php" class="nav-link">Logout</a></li>
+        </ul>
+    </div>
+</nav>
 
 <div class="container" style="max-width: 800px; margin: 2rem auto;">
     <div class="card">
@@ -214,4 +235,5 @@ $pageTitle = 'Edit Grade Component';
     </div>
 </div>
 
-<?php include __DIR__ . '/../../includes/footer.php'; ?>
+</body>
+</html>

@@ -357,7 +357,7 @@ function safe($value, $fallback = 'N/A') {
                 <div class="card-header">
                     <h2 class="card-title">
                         Personalized Learning Resources
-                        <span class="ai-badge">AI</span>
+                        <span class="ai-badge">AI-Assisted</span>
                     </h2>
                 </div>
                 <div class="card-content">
@@ -422,8 +422,8 @@ function safe($value, $fallback = 'N/A') {
             <div class="card full-width-section">
                 <div class="card-header">
                     <h2 class="card-title">
-                        AI-Assisted Recommended Courses for Next Semester
-                        <span class="ai-badge">AI</span>
+                        Recommended Courses for Next Semester
+                        <span class="ai-badge">AI-Assisted</span>
                     </h2>
                 </div>
                 <div class="card-content">
