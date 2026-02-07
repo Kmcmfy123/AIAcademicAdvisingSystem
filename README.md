@@ -367,7 +367,7 @@ composer install
 - **uploads/** - File storage
   - syllabi/ - Course syllabi uploads
 
-## Git Commands
+### Git Commands
 
 Push to repository:
 ```bash
@@ -380,3 +380,4 @@ Pull from repository:
 ```bash
 git pull
 ```
+
