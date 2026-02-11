@@ -331,7 +331,7 @@ INSERT INTO advising_sessions (student_id, professor_id, session_date, notes, re
 Download from: https://getcomposer.org/download/
 
 Or install manually:
-```sql
+```bash
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php composer-setup.php
 php -r "unlink('composer-setup.php');"
@@ -380,6 +380,7 @@ Pull from repository:
 ```bash
 git pull
 ```
+
 
 
 
